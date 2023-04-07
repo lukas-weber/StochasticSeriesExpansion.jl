@@ -12,7 +12,7 @@ struct UCSite{D,F<:Real}
     coordination::Int # filled automatically
 end
 
-UCSite(pos::Tuple, sublattice_sign::Integer = 1) = UCSite(SVector(pos), sublattice_sign, 1)
+UCSite(pos::Tuple) = UCSite(SVector(pos), 0, 0)
 
 struct UnitCell{D,F}
     lattice_vectors::SMatrix{D,D,F} # as columns
@@ -21,11 +21,55 @@ struct UnitCell{D,F}
     bonds::Vector{UCBond{D}}
 end
 
-UnitCell(
+function calculate_uc_signs(bonds::AbstractVector{<:UCBond}, num_sites::Integer)
+    signs = zeros(Int, num_sites)
+
+    signs[1] = 1
+    tries = 0
+    while any(signs .== 0) || tries > length(bonds)^2
+        for b in bonds
+            if any(b.jd .!= 0)
+                continue
+            end
+    
+            if signs[b.iuc] != 0 && signs[b.juc] == 0
+                signs[b.juc] = -signs[b.iuc]
+            elseif signs[b.juc] != && signs[b.iuc] == 0
+                signs[b.iuc] = -signs[b.juc]
+            elseif signs[b.iuc] == signs[b.juc]
+                signs .= 1 # lattice not bipartite
+                break
+            end
+            tries += 1
+        end
+    end
+
+    if any(signs .== 0)
+        signs .= 1
+    end
+    return signs
+end
+
+function calculate_uc_coordinations(bonds::AbstractVector{<:UCBond}, num_sites::Integer)
+    coordinations = zeros(Int, num_sites)
+
+    for b in bonds
+        coordinations[b.iuc] += 1
+        coordinations[b.juc] += 1
+    end
+end
+
+function UnitCell(
     lattice_vectors::AbstractMatrix,
     sites::Vector{<:UCSite{D,F}},
     bonds::Vector{<:UCBond{D}},
-) where {D,F} = UnitCell(SMatrix{D,D}(lattice_vectors), sites, bonds)
+) where {D,F}
+
+    signs = calculate_uc_signs(bonds, length(sites))
+    coordinations = calculate_uc_coordinations(bonds, length(sites))
+    
+    return UnitCell(SMatrix{D,D}(lattice_vectors), [UCSite(site.pos, sign, coordination) for (site, sign, coordination) in zip(sites, signs, coordinations)], bonds)
+end
 
 struct Lattice{D,F}
     uc::UnitCell{D,F}
@@ -34,18 +78,33 @@ struct Lattice{D,F}
     bonds::Vector{NamedTuple{(:type, :i, :j),Tuple{Int,Int,Int}}}
 end
 
-function split_idx(l::Lattice{D,F}, site_idx::Integer) where {D,F}
-    iuc = site_idx % length(l.uc.sites)
-    site_idx ÷= length(l.uc.sites)
+function Lattice{D}(uc::UnitCell{D}, Ls::NTuple{D, <:Integer}) where D
+    for r in Iterators.product([1:L for L in Ls])
+        for b in uc.bonds
+            @assert b.iuc < length(uc.sites)
+            @assert b.juc < length(uc.sites)
+
+            i = join_idx(length(uc.sites), Ls, iuc, r)
+            j = join_idx(length(uc.sites), Ls, juc, r .+ b.jd)
+        end
+    end
+end
+
+function split_idx(Ls::NTuple{D, <:Integer}, site_idx::Integer) where {D}
+    site_idx -= 1
+    iuc = site_idx % uc_site_count + 1
+    site_idx ÷= uc_site_count
 
     r = MVector{D,Int}()
-    for (i, L) in enumerate(l.Ls)
-        r[i] = site_idx % L
+    for (i, L) in enumerate(Ls)
+        r[i] = site_idx % L + 1
         site_idx ÷= L
     end
 
     return iuc, SVector(r)
 end
+
+function join_idx(uc_)
 
 site_count(l::Lattice) = length(l.uc.sites) * prod(l.Ls)
 
@@ -64,23 +123,23 @@ import ..UnitCell, ..UCSite, ..UCBond
 const square = UnitCell(
     [1.0 0.0; 0.0 1.0],
     [UCSite((0.0, 0.0))],
-    [UCBond(0, (0, 1), 0), UCBond(0, (1, 0), 0)],
+    [UCBond(1, (0, 1), 1), UCBond(1, (1, 0), 1)],
 )
 const columnar_dimer = UnitCell(
     [1.0 0.0; 0.0 2.0],
     [UCSite((0.0, 0.0)), UCSite((0.0, 0.5))],
     [
-        UCBond(0, (0, 0), 1),
-        UCBond(0, (1, 0), 0),
+        UCBond(1, (0, 0), 2),
         UCBond(1, (1, 0), 1),
-        UCBond(1, (0, 1), 0),
+        UCBond(2, (1, 0), 2),
+        UCBond(2, (0, 1), 1),
     ],
 )
 
 const honeycomb = UnitCell(
     [[sqrt(3) / 2, -0.5] [sqrt(3 / 2), 0.5]],
     [UCSite((0.0, 0.0)), UCSite((1 / 3, 1 / 3))],
-    [UCBond(0, (0, 0), 1), UCBond(1, (0, 1), 0), UCBond(1, (1, 0), 0)],
+    [UCBond(1, (0, 0), 2), UCBond(2, (0, 1), 1), UCBond(2, (1, 0), 1)],
 )
 
 end
