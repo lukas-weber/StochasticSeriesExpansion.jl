@@ -15,20 +15,20 @@ Base.@kwdef mutable struct MC{Model<:AbstractModel} <: LoadLeveller.AbstractMC
     state::Vector{StateIdx}
 
     model::Model
-    sse_data::SSEData
+    sse_data::SSEData{Model}
 
-    vertices::Matrix{Int}
-    v_first::Vector{Int}
-    v_last::Vector{Int}
+    vertex_list::VertexList
 end
 
 function MC{Model}(params::AbstractDict) where {Model}
     model = Model(params)
-    sse_data = generate_sse_data(model)
+    sse_data = SSEData(model)
     return MC(
-        v_first = zeros(Int, site_count(sse_data)),
+        vertex_list = VertexList(site_count(sse_data)),
         v_last = zeros(Int, site_count(sse_data)),
         T = params[:T],
+        model = model,
+        sse_data = sse_data,
     )
 end
 
@@ -54,7 +54,7 @@ end
 
 function LoadLeveller.sweep!(mc::MC, ctx::LoadLeveller.MCContext)
     diagonal_update(mc, ctx)
-    make_vertex_list(mc)
+    make_vertex_list!(mc.vertex_list, mc.operators, mc.sse_data)
     worm_update()
 
     return nothing
@@ -182,4 +182,80 @@ function diagonal_update(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Mode
     end
 
     @assert tmpstate == mc.state
+end
+
+function worm_update(mc::MC, ctx::LoadLeveller.MCContext)
+    total_worm_length = 1.0
+    for i in 1:ceil(Int, mc.num_worms)
+        worm_length = worm_traverse(mc, ctx)
+        total_worm_length += worm_length
+    end
+
+    if is_thermalized(ctx) && mc.num_operators != 0
+        measure!(ctx, :WormLengthFraction, total_worm_length/mc.num_operators)
+    end
+
+    avg_worm_length = total_worm_length / ceil(mc.num_worms)
+    if !is_thermalized(ctx)
+        mc.avg_worm_length += 0.01 * (avg_worm_length - mc.avg_worm_length)
+        target_worms = mc.target_worm_length_fraction * mc.num_operators / mc.avg_worm_length
+
+        mc.num_worms += 0.01 * (target_worms - mc.num_worms) + tanh(target_worms - mc.num_worms)
+        mc.num_worms = clamp(mc.num_worms, 1.0, 1.0 + mc.num_operators / 2.0)
+    end
+
+    for i in eachindex(mc.state)
+        (l, p) = mc.vertex_list.v_first[:,i]
+        if p < 0
+            mc.state[i] = rand(ctx.rng, 1:get_site_data(mc.sse_data, i).dim)
+        else
+            op = mc.operators[p]
+            mc.state[i] = get_vertex_data(mc.sse_data, get_bond(op)).leg_state[l]
+        end
+    end
+
+    return nothing
+end
+
+function worm_traverse(mc::MC{Model}, ctx::LoadLeveller.MCContext) where Model
+    if mc.num_operators == 0
+        return 0
+    end
+
+    worm_length = 1
+
+    p0 = rand(ctx.rng, 1:length(mc.operators))
+    l0 = rand(ctx.rng, 1:leg_count(Model))
+
+    op0 = mc.operators[p0]
+    site0 = get_bond_data(mc.sse_data, get_bond(op0))[l0 % (leg_count(Model)÷2)]
+    wormfunc0 = rand(ctx.rng, 1:worm_count(get_site_data(mc.sse_data, site0)))
+
+    p = p0
+    leg_in = l0
+    wormfunc = wormfunc0
+
+    while true
+        op = mc.operators[p0]
+        bond = get_bond(op)
+        (leg_out, wormfunc_out, new_vertex) = scatter(get_vertex_data(mc.sse_data, bond, get_vertex(op), leg_in, wormfunc, rand(ctx.rng)) 
+
+        mc.operators[p] = OperCode(bond, new_vertex)
+        site_out = get_site_data(mc.sse_data, get_bond_data(mc.sse_data, bond)[leg_out % (leg_count(Model)÷2)])
+
+        if p == p0 && leg_out == l0 && wormfunc_out == worm_inverse(wormfunc0, site_out)
+            break
+        end
+
+        worm_length += 1
+
+        wormfunc = wormfunc_out
+        (leg_in, p) = mc.vertex_list.vertices[:, leg_out, p]
+
+        if p == p0 && leg_in == l0 && wormfunc == wormfunc0
+            break
+        end
+    end
+
+    return worm_length 
 end
