@@ -8,6 +8,8 @@ struct VertexCode
     code::OperCodeUInt
 end
 
+VertexCode(::Nothing) = VertexCode(0)
+
 function VertexCode(diagonal::Bool, vertex_idx::Integer)
     v = VertexCode(diagonal | (vertex_idx << 1))
     @debug begin
@@ -16,9 +18,9 @@ function VertexCode(diagonal::Bool, vertex_idx::Integer)
     return v
 end
 
-@inline isdiagonal(v::VertexCode) = v.code & 1
-@inline get_vertex_idx(v::VertexCode) = v.code >> 1
-@inline isinvalid(v::VertexCode) = v.code >= 1 << vertex_code_maxbits
+isdiagonal(v::VertexCode) = v.code & 1
+isinvalid(v::VertexCode) = v.code >= 1 << vertex_code_maxbits
+get_vertex_idx(v::VertexCode) = v.code >> 1
 
 struct OperCode
     code::OperCodeUInt
