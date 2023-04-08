@@ -22,9 +22,8 @@ end
 spin_operators(dimension::Integer) = spin_operators(Float64, dimension)
 
 """Returns the bosonic creation operator of `dimension` which corresponds to a boson number cutoff of `n < dimension`"""
-function bosonic_creation_operator(::Type{T}, dimension) where {T<:AbstractFloat}
-    return diagm(1 => sqrt.(T.(1:dimension)))
+function bosonic_a_operator(::Type{T}, dimension) where {T<:AbstractFloat}
+    return diagm(1 => sqrt.(T.(1:dimension-1)))
 end
 
-bosonic_creation_operator(dimension::Integer) =
-    bosonic_creation_operator(Float64, dimension)
+bosonic_a_operator(dimension::Integer) = bosonic_a_operator(Float64, dimension)
