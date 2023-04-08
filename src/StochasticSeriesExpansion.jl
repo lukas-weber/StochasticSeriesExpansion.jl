@@ -1,5 +1,6 @@
 module StochasticSeriesExpansion
 
+include("models/common/operators.jl")
 include("models/common/lattice.jl")
 
 include("util.jl")
