@@ -2,6 +2,7 @@ module StochasticSeriesExpansion
 
 include("models/common/lattice.jl")
 
+include("util.jl")
 include("worms.jl")
 include("opercode.jl")
 include("vertex_data.jl")

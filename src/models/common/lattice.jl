@@ -34,7 +34,7 @@ function calculate_uc_signs(bonds::AbstractVector{<:UCBond}, num_sites::Integer)
     
             if signs[b.iuc] != 0 && signs[b.juc] == 0
                 signs[b.juc] = -signs[b.iuc]
-            elseif signs[b.juc] != && signs[b.iuc] == 0
+            elseif signs[b.juc] != 0 && signs[b.iuc] == 0
                 signs[b.iuc] = -signs[b.juc]
             elseif signs[b.iuc] == signs[b.juc]
                 signs .= 1 # lattice not bipartite
@@ -47,6 +47,7 @@ function calculate_uc_signs(bonds::AbstractVector{<:UCBond}, num_sites::Integer)
     if any(signs .== 0)
         signs .= 1
     end
+
     return signs
 end
 
@@ -57,6 +58,8 @@ function calculate_uc_coordinations(bonds::AbstractVector{<:UCBond}, num_sites::
         coordinations[b.iuc] += 1
         coordinations[b.juc] += 1
     end
+    
+    return coordinations
 end
 
 function UnitCell(
@@ -71,40 +74,41 @@ function UnitCell(
     return UnitCell(SMatrix{D,D}(lattice_vectors), [UCSite(site.pos, sign, coordination) for (site, sign, coordination) in zip(sites, signs, coordinations)], bonds)
 end
 
+struct LatticeBond
+    type::Int
+    i::Int
+    j::Int
+end
+
 struct Lattice{D,F}
     uc::UnitCell{D,F}
     Ls::NTuple{D,Int}
 
-    bonds::Vector{NamedTuple{(:type, :i, :j),Tuple{Int,Int,Int}}}
+    bonds::Vector{LatticeBond}
 end
 
-function Lattice{D}(uc::UnitCell{D}, Ls::NTuple{D, <:Integer}) where D
-    for r in Iterators.product([1:L for L in Ls])
-        for b in uc.bonds
-            @assert b.iuc < length(uc.sites)
-            @assert b.juc < length(uc.sites)
+function Lattice(uc::UnitCell{D,F}, Ls::NTuple{D, <:Integer}) where {D,F}
+    dims = (length(uc.sites), Ls...)
+    bonds = LatticeBond[]
+    for r in Iterators.product([1:L for L in Ls]...)
+        for (bond_type, b) in enumerate(uc.bonds)
+            @assert 1 <= b.iuc <= length(uc.sites)
+            @assert 1 <= b.juc <= length(uc.sites)
 
-            i = join_idx(length(uc.sites), Ls, iuc, r)
-            j = join_idx(length(uc.sites), Ls, juc, r .+ b.jd)
+            i = join_idx(dims, (b.iuc, r...))
+            j = join_idx(dims, (b.juc, ((r .+ b.jd .- 1) .% Ls .+ 1)...))
+
+            push!(bonds, LatticeBond(bond_type, i, j))
         end
     end
+
+    return Lattice{D,F}(uc, Ls, bonds)
+end        
+
+function split_idx(l::Lattice, site_idx::Integer)
+    r = split_idx((length(l.uc.sites), l.Ls...), site_idx)
+    return r[1], r[2:end]
 end
-
-function split_idx(Ls::NTuple{D, <:Integer}, site_idx::Integer) where {D}
-    site_idx -= 1
-    iuc = site_idx % uc_site_count + 1
-    site_idx ÷= uc_site_count
-
-    r = MVector{D,Int}()
-    for (i, L) in enumerate(Ls)
-        r[i] = site_idx % L + 1
-        site_idx ÷= L
-    end
-
-    return iuc, SVector(r)
-end
-
-function join_idx(uc_)
 
 site_count(l::Lattice) = length(l.uc.sites) * prod(l.Ls)
 

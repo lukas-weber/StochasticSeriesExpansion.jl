@@ -3,7 +3,6 @@
     @test S.split_idx((5,2),2) == (2,1)
     @test S.split_idx((5,2),6) == (1,2)
 
-    @test S.join_idx()
     dims = (6,3,1,5)
     for i in 1:prod(dims)
         @test S.join_idx(dims, S.split_idx(dims, i)) == i
