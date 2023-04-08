@@ -1,6 +1,6 @@
 using StaticArrays
 
-function split_idx(dims::NTuple{D, <:Integer}, idx::Integer) where D
+function split_idx(dims::NTuple{D,<:Integer}, idx::Integer) where {D}
     idx -= 1
 
     r = MVector{D,Int}(undef)
@@ -12,7 +12,7 @@ function split_idx(dims::NTuple{D, <:Integer}, idx::Integer) where D
     return Tuple(r)
 end
 
-function join_idx(dims::NTuple{D, <:Integer}, idxs::NTuple{D, <:Integer}) where D
+function join_idx(dims::NTuple{D,<:Integer}, idxs::NTuple{D,<:Integer}) where {D}
     r = 0
     for (idx, d) in zip(Iterators.reverse(idxs), Iterators.reverse(dims))
         r *= d

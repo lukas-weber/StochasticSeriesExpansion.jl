@@ -31,7 +31,7 @@ function calculate_uc_signs(bonds::AbstractVector{<:UCBond}, num_sites::Integer)
             if any(b.jd .!= 0)
                 continue
             end
-    
+
             if signs[b.iuc] != 0 && signs[b.juc] == 0
                 signs[b.juc] = -signs[b.iuc]
             elseif signs[b.juc] != 0 && signs[b.iuc] == 0
@@ -58,7 +58,7 @@ function calculate_uc_coordinations(bonds::AbstractVector{<:UCBond}, num_sites::
         coordinations[b.iuc] += 1
         coordinations[b.juc] += 1
     end
-    
+
     return coordinations
 end
 
@@ -70,8 +70,15 @@ function UnitCell(
 
     signs = calculate_uc_signs(bonds, length(sites))
     coordinations = calculate_uc_coordinations(bonds, length(sites))
-    
-    return UnitCell(SMatrix{D,D}(lattice_vectors), [UCSite(site.pos, sign, coordination) for (site, sign, coordination) in zip(sites, signs, coordinations)], bonds)
+
+    return UnitCell(
+        SMatrix{D,D}(lattice_vectors),
+        [
+            UCSite(site.pos, sign, coordination) for
+            (site, sign, coordination) in zip(sites, signs, coordinations)
+        ],
+        bonds,
+    )
 end
 
 struct LatticeBond
@@ -87,7 +94,7 @@ struct Lattice{D,F}
     bonds::Vector{LatticeBond}
 end
 
-function Lattice(uc::UnitCell{D,F}, Ls::NTuple{D, <:Integer}) where {D,F}
+function Lattice(uc::UnitCell{D,F}, Ls::NTuple{D,<:Integer}) where {D,F}
     dims = (length(uc.sites), Ls...)
     bonds = LatticeBond[]
     for r in Iterators.product([1:L for L in Ls]...)
@@ -103,7 +110,7 @@ function Lattice(uc::UnitCell{D,F}, Ls::NTuple{D, <:Integer}) where {D,F}
     end
 
     return Lattice{D,F}(uc, Ls, bonds)
-end        
+end
 
 function split_idx(l::Lattice, site_idx::Integer)
     r = split_idx((length(l.uc.sites), l.Ls...), site_idx)

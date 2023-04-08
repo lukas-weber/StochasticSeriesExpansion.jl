@@ -1,7 +1,7 @@
 @testset "OperCode" begin
     for bond in rand(1:100*100, 20)
         for vidx in rand(1:77, 20)
-            for diagonal in [true, false] 
+            for diagonal in [true, false]
                 v = S.VertexCode(diagonal, vidx)
 
                 @test !S.isinvalid(v)

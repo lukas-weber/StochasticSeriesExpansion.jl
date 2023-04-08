@@ -32,32 +32,32 @@ end
 @testset "Lattice" begin
 
     @testset "n-walks" begin
-        for Ls in [(3,4), (8,4), (5,5), (8,8)]
+        for Ls in [(3, 4), (8, 4), (5, 5), (8, 8)]
             ucs = [S.UnitCells.square, S.UnitCells.columnar_dimer, S.UnitCells.honeycomb]
-            lattices = (uc->S.Lattice(uc, Ls)).(ucs)
+            lattices = (uc -> S.Lattice(uc, Ls)).(ucs)
             As = adjacency_matrix.(lattices)
             (Asquare, Acolumnar_dimer, Ahoneycomb) = As
 
             for (A, lattice) in zip(As, lattices)
-                @test tr(A^2)/2 == length(lattice.bonds)
+                @test tr(A^2) / 2 == length(lattice.bonds)
             end
 
 
-            for n in 2:6
-                if any(Ls.<=n)
+            for n = 2:6
+                if any(Ls .<= n)
                     continue
                 end
-                
+
                 if isodd(n)
                     for A in (Asquare, Acolumnar_dimer, Ahoneycomb)
                         @test tr(A^n) == 0
                     end
                 else
-                    num_walks = tr(Asquare^n)/prod(Ls)
-                    @test num_walks == binomial(n, n÷2)^2
-            
-                    num_walks = tr(Acolumnar_dimer^n)÷(prod(Ls)*2)
-                    @test num_walks == binomial(n, n÷2)^2
+                    num_walks = tr(Asquare^n) / prod(Ls)
+                    @test num_walks == binomial(n, n ÷ 2)^2
+
+                    num_walks = tr(Acolumnar_dimer^n) ÷ (prod(Ls) * 2)
+                    @test num_walks == binomial(n, n ÷ 2)^2
                 end
             end
         end
