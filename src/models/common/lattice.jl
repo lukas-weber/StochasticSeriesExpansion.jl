@@ -87,6 +87,8 @@ struct LatticeBond
     j::Int
 end
 
+convert(::Type{Bond{2}}, lb::LatticeBond) = Bond(lb.type, (lb.i, lb.j))
+
 struct Lattice{D,F}
     uc::UnitCell{D,F}
     Ls::NTuple{D,Int}
