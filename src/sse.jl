@@ -23,7 +23,7 @@ end
 
 function MC{Model}(params::AbstractDict) where {Model}
     model = Model(params)
-    sse_data = SSEData(model)
+    sse_data = generate_sse_data(model)
     return MC(
         vertex_list = VertexList(site_count(sse_data)),
         v_last = zeros(Int, site_count(sse_data)),

@@ -21,7 +21,7 @@ function SSEData{NSites}(
     sites::Vector{Site},
     bonds::Vector{Bond{NSites}},
 ) where {NSites}
-    energy_offset = mapreduce(+, b -> vertex_data[b.type].energy_offset, bonds)
+    energy_offset = sum(b -> vertex_data[b.type].energy_offset, bonds)
 
     return SSEData(vertex_data, sites, bonds, energy_offset)
 end
