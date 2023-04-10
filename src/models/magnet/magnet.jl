@@ -25,62 +25,68 @@ end
 struct Magnet{D,F} <: S.AbstractModel
     lat::S.Lattice{D,F}
 
-    bond_params::Vector{MagnetBondParams}
+    bond_params::Vector{MagnetBondParams{F}}
     site_params::Vector{MagnetSiteParams}
 end
 
 
-struct ParameterMapping
+struct ParameterMap
     map::Union{Nothing,Dict}
 end
 
 
-function map(parameter_map::ParameterMapping, path...)
+function map(parameter_map::ParameterMap, path...)::Symbol
     if parameter_map.map === nothing
         return path[end]
     end
-    
+
     res = parameter_map.map
     for p in path
+        if !haskey(res, p)
+            return path[end]
+        end
         res = res[p]
     end
 
     return res
 end
 
-function Magnet(
-    params::AbstractDict{Symbol,<:Any},
-)
+function Magnet(params::AbstractDict{Symbol,<:Any})
     Lx = params[:Lx]
     Ly = get(params, :Ly, Lx)
     lat = S.Lattice(params[:unitcell], (Lx, Ly))
 
-    parameter_mapping = ParameterMapping(get(params, :parameter_mapping, nothing))
+    parameter_map = ParameterMap(get(params, :parameter_map, nothing))
 
-    pm(path...) = map(parameter_mapping, path...)
+    pm(path...) = map(parameter_map, path...)
 
     function split_site(param::Symbol, bond::S.LatticeBond, default)
-        (iuc, _, _) = S.split_idx(lat, bond.i)
-        (juc, _, _) = S.split_idx(lat, bond.j)
+        (iuc, _) = S.split_idx(lat, bond.i)
+        (juc, _) = S.split_idx(lat, bond.j)
 
-        first = get(params, pm(:sites, iuc, param), default) / lat.uc.sites[iuc].coordination
-        second = get(params, pm(:sites, juc, param), default) / lat.uc.sites[juc].coordination
+        first =
+            get(params, pm(:sites, iuc, param), default) / lat.uc.sites[iuc].coordination
+        second =
+            get(params, pm(:sites, juc, param), default) / lat.uc.sites[juc].coordination
 
-        return first + second
+        return (first + second) / 2
     end
 
     full_bond_params = [
         MagnetBondParams(
             params[pm(:bonds, bond.type, :J)],
-            get(params, pm(:bonds, bond.type, :d), 0),
-            split_site(:Dx, bond, 0),
-            split_site(:Dz, bond, 0),
-            split_site(:hz, bond, 0),
+            get(params, pm(:bonds, bond.type, :d), 0.0),
+            split_site(:Dx, bond, 0.0),
+            split_site(:Dz, bond, 0.0),
+            split_site(:hz, bond, 0.0),
         ) for bond in lat.bonds
     ]
 
     full_site_params = repeat(
-        [MagnetSiteParams(get(params, pm(:sites, i, :S), 1 // 2)) for i in eachindex(lat.uc.sites)],
+        [
+            MagnetSiteParams(get(params, pm(:sites, i, :S), 1 // 2)) for
+            i in eachindex(lat.uc.sites)
+        ],
         prod(lat.Ls),
     )
 
