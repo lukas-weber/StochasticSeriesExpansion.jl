@@ -26,11 +26,12 @@ struct VertexData{NSites}
     leg_states::Matrix{StateIdx} # [leg, vertex]
 end
 
-function VertexData{NSites}(
+function VertexData(
     dims::NTuple{NSites,<:Integer},
-    bond_hamiltonian::AbstractMatrix,
+    bond_hamiltonian::AbstractMatrix;
+    energy_offset_factor::AbstractFloat = 0.25,
 ) where {NSites}
-    energy_offset = calc_energy_offset(bond_hamiltonian)
+    energy_offset = calc_energy_offset(bond_hamiltonian, energy_offset_factor)
     total_dim = prod(dims)
     max_worm_count = maximum(worm_count, dims)
 
@@ -57,7 +58,7 @@ function VertexData{NSites}(
             lp_tolerance,
         )
 
-    return VertexData(
+    return VertexData{NSites}(
         energy_offset,
         dims,
         diagonal_vertices,
@@ -104,12 +105,11 @@ end
 get_weight(vd::VertexData, v::VertexCode) = isinvalid(v) ? 0 : vd.weights[get_vertex_idx(v)]
 
 
-
-function calc_energy_offset(H::AbstractMatrix)
+function calc_energy_offset(H::AbstractMatrix, energy_offset_factor::AbstractFloat)
     hmin = minimum(H[collect(diagind(H))])
     hmax = maximum(H[collect(diagind(H))])
 
-    epsilon = (hmax - hmin) * 0.25
+    epsilon = (hmax - hmin) * energy_offset_factor
     return -(hmax + epsilon)
 end
 
@@ -119,12 +119,12 @@ function construct_vertices(
     energy_offset::AbstractFloat,
     tolerance::AbstractFloat,
 ) where {NSites}
-    diagonal_vertices = fill(VertexCode(), size(size(bond_hamiltonian, 2)))
+    diagonal_vertices = fill(VertexCode(nothing), size(bond_hamiltonian, 1))
     weights = Vector{eltype(bond_hamiltonian)}()
     leg_states = StateIdx[]
     signs = Int8[]
 
-    for (i, j) in CartesianIndices(bond_hamiltonian)
+    for (i, j) in Tuple.(CartesianIndices(bond_hamiltonian))
         w = -bond_hamiltonian[i, j]
         if i == j
             w -= energy_offset
@@ -136,11 +136,12 @@ function construct_vertices(
             end
 
             for tmp in [i, j]
-                for d in enumerate(dims[end:-1:1])
-                    push!(leg_states, tmp % d)
+                tmp -= 1
+                for d in dims[end:-1:1]
+                    push!(leg_states, tmp % d + 1)
                     tmp ÷= d
                 end
-                reverse!(@view(leg_states[end-NSites+1:end]), dims = 2)
+                reverse!(@view(leg_states[end-NSites+1:end]))
             end
 
             push!(weights, abs(w))
@@ -150,7 +151,6 @@ function construct_vertices(
 
     return diagonal_vertices, weights, reshape(leg_states, 2 * NSites, :), signs
 end
-
 
 function wrap_vertex_idx(
     leg_states::AbstractMatrix{StateIdx},
@@ -191,6 +191,8 @@ function vertex_apply_change(
     return @views findfirst(v -> new_leg_state == leg_states[:, v], 1:size(leg_states, 2))
 end
 
+site_of_leg(leg::Integer, num_sites::Integer) = leg > num_sites ? leg - num_sites : leg
+
 function construct_transitions(
     weights::AbstractArray{<:AbstractFloat},
     leg_states::AbstractMatrix{StateIdx},
@@ -218,7 +220,7 @@ function construct_transitions(
 
     for worm = 1:max_worm_count
         for leg = 1:leg_count
-            dim = dims[leg%NSites]
+            dim = dims[site_of_leg(leg, NSites)]
             if worm < worm_count(dim)
                 push!(steps, worm * leg_count + leg)
                 step_idx[leg, worm] = length(steps)
@@ -252,7 +254,7 @@ function construct_transitions(
         MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(cost, x), 0.0),
     )
     MOI.set(optimizer, MOI.ObjectiveSense(), MOI.MIN_SENSE)
-    MOI.set(optimizer, MOI.AbsoluteGapTolerance(), lp_tolerance)
+    #MOI.set(optimizer, MOI.AbsoluteGapTolerance(), lp_tolerance)
 
     for xi in x
         MOI.add_constraint(optimizer, xi, MOI.GreaterThan(0))

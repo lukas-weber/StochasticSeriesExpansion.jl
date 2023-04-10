@@ -1,7 +1,5 @@
 module StochasticSeriesExpansion
 
-
-
 include("util.jl")
 include("worms.jl")
 include("opercode.jl")

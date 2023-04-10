@@ -20,5 +20,6 @@
         end
     end
 
+    @test S.isinvalid(S.VertexCode(nothing))
     @test S.isidentity(S.OperCode(S.Identity))
 end
