@@ -1,0 +1,130 @@
+module Models
+
+using LinearAlgebra
+
+import ..StochasticSeriesExpansion as S
+
+struct MagnetBondParams{F<:AbstractFloat}
+    J::F
+    d::F
+
+    Dx::F
+    Dz::F
+    hz::F
+end
+
+struct MagnetSiteParams
+    spin_mag::Rational
+end
+
+
+"""Describes the parameters of each bond
+
+``H = \\sum_{ij} J_ij S_i\\cdotS_j + d_ij S_i^z S_j^z``
+"""
+struct Magnet{D,F} <: S.AbstractModel
+    lat::S.Lattice{D,F}
+
+    bond_params::Vector{MagnetBondParams}
+    site_params::Vector{MagnetSiteParams}
+end
+
+
+struct ParameterMapping
+    map::Union{Nothing,Dict}
+end
+
+
+function map(parameter_map::ParameterMapping, path...)
+    if parameter_map.map === nothing
+        return path[end]
+    end
+    
+    res = parameter_map.map
+    for p in path
+        res = res[p]
+    end
+
+    return res
+end
+
+function Magnet(
+    params::AbstractDict{Symbol,<:Any},
+)
+    Lx = params[:Lx]
+    Ly = get(params, :Ly, Lx)
+    lat = S.Lattice(params[:unitcell], (Lx, Ly))
+
+    parameter_mapping = ParameterMapping(get(params, :parameter_mapping, nothing))
+
+    pm(path...) = map(parameter_mapping, path...)
+
+    function split_site(param::Symbol, bond::S.LatticeBond, default)
+        (iuc, _, _) = S.split_idx(lat, bond.i)
+        (juc, _, _) = S.split_idx(lat, bond.j)
+
+        first = get(params, pm(:sites, iuc, param), default) / lat.uc.sites[iuc].coordination
+        second = get(params, pm(:sites, juc, param), default) / lat.uc.sites[juc].coordination
+
+        return first + second
+    end
+
+    full_bond_params = [
+        MagnetBondParams(
+            params[pm(:bonds, bond.type, :J)],
+            get(params, pm(:bonds, bond.type, :d), 0),
+            split_site(:Dx, bond, 0),
+            split_site(:Dz, bond, 0),
+            split_site(:hz, bond, 0),
+        ) for bond in lat.bonds
+    ]
+
+    full_site_params = repeat(
+        [MagnetSiteParams(get(params, pm(:sites, i, :S), 1 // 2)) for i in eachindex(lat.uc.sites)],
+        prod(lat.Ls),
+    )
+
+    return Magnet(lat, full_bond_params, full_site_params)
+end
+
+function magnetization_state(
+    mag::Magnet{D,F},
+    site_idx::Integer,
+    state_idx::Integer,
+)::F where {D,F}
+    return -mag.site_params[site_idx].spin_mag + state_idx - 1
+end
+
+function generate_vertex_data(mag::Magnet{D,F}, uc_bond, bond::MagnetBondParams) where {D,F}
+    dimi = mag.site_params[uc_bond.iuc].spin_mag * 2 + 1
+    dimj = mag.site_params[uc_bond.juc].spin_mag * 2 + 1
+
+    splusi, szi = S.spin_operators(F, dimi)
+    splusj, szj = S.spin_operators(F, dimj)
+    idi = diagm(ones(F, dimi))
+    idj = diagm(ones(F, dimj))
+
+    H =
+        bond.J * (
+            0.5 * (kron(splusi', splusj) + kron(splusi, splusj')) +
+            (1 + bond.d) * kron(szi, szj)
+        ) +
+        bond.hz * (kron(idi, szj) + kron(szi, idj)) +
+        bond.Dx / 4 * (kron((splusi + splusi')^2, idj) + kron(idi, (splusj + splusj')^2)) +
+        bond.Dz * (kron(szi^2, idj) + kron(idi, szj^2))
+
+    return S.VertexData((dimi, dimj), H)
+end
+
+function S.generate_sse_data(mag::Magnet)
+    vertex_data = [
+        generate_vertex_data(mag, uc_bond, bond) for
+        (uc_bond, bond) in zip(mag.lat.uc.bonds, mag.bond_params)
+    ]
+
+    sites = [Int(s.spin_mag * 2 + 1) for s in mag.site_params]
+
+    return S.SSEData(vertex_data, sites, mag.lat.bonds)
+end
+
+end
