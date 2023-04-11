@@ -156,7 +156,7 @@ function wrap_vertex_idx(
     leg_states::AbstractMatrix{StateIdx},
     vertex_idx::Union{<:Integer,Nothing},
 )
-    if vertex_idx !== nothing
+    if vertex_idx === nothing
         return VertexCode(nothing)
     end
     leg_count = size(leg_states, 1)
@@ -170,6 +170,9 @@ function wrap_vertex_idx(
     return VertexCode(diagonal, vertex_idx)
 end
 
+
+site_of_leg(leg::Integer, num_sites::Integer) = leg > num_sites ? leg - num_sites : leg
+
 function vertex_apply_change(
     leg_states::AbstractMatrix{StateIdx},
     dims::NTuple{NSites,<:Integer},
@@ -182,16 +185,14 @@ function vertex_apply_change(
     (leg_in, worm_in) = step_in
     (leg_out, worm_out) = step_out
 
-    dim_in = dims[leg_in%NSites]
-    dim_out = dims[leg_out%NSites]
+    dim_in = dims[site_of_leg(leg_in, NSites)]
+    dim_out = dims[site_of_leg(leg_out, NSites)]
 
     new_leg_state[leg_in] = worm_action(worm_in, new_leg_state[leg_in], dim_in)
     new_leg_state[leg_out] = worm_action(worm_out, new_leg_state[leg_out], dim_out)
 
     return @views findfirst(v -> new_leg_state == leg_states[:, v], 1:size(leg_states, 2))
 end
-
-site_of_leg(leg::Integer, num_sites::Integer) = leg > num_sites ? leg - num_sites : leg
 
 function construct_transitions(
     weights::AbstractArray{<:AbstractFloat},
@@ -236,7 +237,7 @@ function construct_transitions(
     for step_in in steps
         for step_out in steps
             vc = (step_in = step_in, step_out = step_out)
-            inv_exists = findfirst(x -> x == inverse(x), variables) !== nothing
+            inv_exists = findfirst(x -> x == inverse(vc), variables) !== nothing
             if !inv_exists
                 push!(variables, vc)
             end
@@ -257,7 +258,7 @@ function construct_transitions(
     #MOI.set(optimizer, MOI.AbsoluteGapTolerance(), lp_tolerance)
 
     for xi in x
-        MOI.add_constraint(optimizer, xi, MOI.GreaterThan(0))
+        MOI.add_constraint(optimizer, xi, MOI.GreaterThan(0.0))
     end
 
     constraint_idxs = MOI.ConstraintIndex[]
@@ -271,7 +272,7 @@ function construct_transitions(
 
         ci = MOI.add_constraint(
             optimizer,
-            MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(ones(xs), xs), 0.0),
+            MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(ones(length(xs)), xs), 0.0),
             MOI.EqualTo(0.0),
         )
         push!(constraint_idxs, ci)
@@ -283,8 +284,6 @@ function construct_transitions(
     while true
         v = nothing
         step_in = nothing
-
-        @show isinvalid.(transitions)
 
         for it in CartesianIndices(transitions)
             if isinvalid(transitions[it])
@@ -323,9 +322,9 @@ function construct_transitions(
 
         for in in steps
             if targets[in...] !== nothing
-                norm = constraints[step_idx[in...]] == 0 ? 1 : constraints[step_idx[in]]
-                offset = length(transition_cumprobs)
-                length = 0
+                norm = constraints[step_idx[in...]] == 0 ? 1 : constraints[step_idx[in...]]
+                offset = length(transition_cumprobs)+1
+                len = -1 # one-based indexing...
 
                 for out in steps
                     var = findfirst(
@@ -359,18 +358,18 @@ function construct_transitions(
                             variables[var].step_in
                         push!(
                             transition_targets,
-                            wrap_vertex_idx(leg_states, targets[in_inv]),
+                            wrap_vertex_idx(leg_states, targets[in_inv...]),
                         )
                         push!(transition_step_outs, out)
                         @assert !isinvalid(transition_targets[end])
 
-                        length += 1
+                        len += 1
                     end
                 end
 
-                transitions[in..., targets[in...]] = Transition(offset, length)
+                transitions[in..., targets[in...]] = Transition(offset, len)
 
-                probs = @view transition_cumprobs[offset:offset+length]
+                probs = @view transition_cumprobs[offset:offset+len]
                 cumsum!(probs, probs)
                 normed_norm = probs[end]
                 if offset >= 0 && abs(normed_norm - 1) > tolerance
