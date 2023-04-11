@@ -201,7 +201,7 @@ function construct_transitions(
     dims::NTuple{NSites,<:Integer},
     tolerance::AbstractFloat,
     lp_tolerance::AbstractFloat,
-) where NSites
+) where {NSites}
     used_inaccurate_truncations = false
 
     leg_count = 2 * NSites
@@ -216,7 +216,7 @@ function construct_transitions(
     end
 
     steps = Tuple{Int,Int}[]
-    inv_steps = fill((0,0), leg_count, max_worm_count)
+    inv_steps = fill((0, 0), leg_count, max_worm_count)
     step_idx = -ones(Int, leg_count, max_worm_count)
 
     for worm = 1:max_worm_count
@@ -231,8 +231,10 @@ function construct_transitions(
     end
 
     variables = NamedTuple{(:step_in, :step_out),Tuple{Tuple{Int,Int},Tuple{Int,Int}}}[]
-    inverse(variable) =
-        (step_in = inv_steps[variable.step_out...], step_out = inv_steps[variable.step_in...])
+    inverse(variable) = (
+        step_in = inv_steps[variable.step_out...],
+        step_out = inv_steps[variable.step_in...],
+    )
 
     for step_in in steps
         for step_out in steps
@@ -278,7 +280,7 @@ function construct_transitions(
         push!(constraint_idxs, ci)
     end
 
-    targets = Matrix{Int}(undef, leg_count, max_worm_count)
+    targets = Matrix{Union{Nothing,Int}}(undef, leg_count, max_worm_count)
     constraints = zeros(length(steps))
 
     while true
@@ -300,7 +302,7 @@ function construct_transitions(
         for step_out in steps
             target = vertex_apply_change(leg_states, dims, v, step_in, step_out)
             targets[step_out...] = target
-            constraint = target !== nothing ? weights[target] : 0
+            constraint = target !== nothing ? weights[target] : 0.0
             MOI.set(
                 optimizer,
                 MOI.ConstraintSet(),
@@ -323,7 +325,7 @@ function construct_transitions(
         for in in steps
             if targets[in...] !== nothing
                 norm = constraints[step_idx[in...]] == 0 ? 1 : constraints[step_idx[in...]]
-                offset = length(transition_cumprobs)+1
+                offset = length(transition_cumprobs) + 1
                 len = -1 # one-based indexing...
 
                 for out in steps

@@ -1,6 +1,7 @@
 using Test
 import StochasticSeriesExpansion as S
 
+include("test_worms.jl")
 include("test_opercode.jl")
 include("test_vertex_data.jl")
 include("test_util.jl")
