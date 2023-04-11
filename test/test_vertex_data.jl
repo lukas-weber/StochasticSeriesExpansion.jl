@@ -1,5 +1,7 @@
 
 @testset "VertexData" begin
+    @test S.isinvalid(S.Transition())
+
     @testset "S=1/2 Heisenberg" begin
         (splus, sz) = S.spin_operators(2)
         Hbond = kron(sz, sz) + 0.5 * (kron(splus, splus') + kron(splus', splus))

@@ -200,12 +200,12 @@ function construct_transitions(
     dims::NTuple{NSites,<:Integer},
     tolerance::AbstractFloat,
     lp_tolerance::AbstractFloat,
-) where {NSites}
+) where NSites
     used_inaccurate_truncations = false
 
     leg_count = 2 * NSites
 
-    transitions = Array{Transition,3}(undef, leg_count, max_worm_count, length(weights))
+    transitions = fill(Transition(), leg_count, max_worm_count, length(weights))
     transition_cumprobs = Float64[]
     transition_targets = VertexCode[]
     transition_step_outs = Tuple{Int,Int}[]
@@ -215,23 +215,23 @@ function construct_transitions(
     end
 
     steps = Tuple{Int,Int}[]
-    inv_steps = zeros(Int, 2, leg_count, max_worm_count)
+    inv_steps = fill((0,0), leg_count, max_worm_count)
     step_idx = -ones(Int, leg_count, max_worm_count)
 
     for worm = 1:max_worm_count
         for leg = 1:leg_count
             dim = dims[site_of_leg(leg, NSites)]
-            if worm < worm_count(dim)
-                push!(steps, worm * leg_count + leg)
+            if worm <= worm_count(dim)
+                push!(steps, (leg, worm))
                 step_idx[leg, worm] = length(steps)
-                inv_steps[:, leg, worm] .= (leg, worm_inverse(worm, dim))
+                inv_steps[leg, worm] = (leg, worm_inverse(worm, dim))
             end
         end
     end
 
-    variables = NamedTuple{(:step_in, :step_out),Tuple{Int,Int}}[]
+    variables = NamedTuple{(:step_in, :step_out),Tuple{Tuple{Int,Int},Tuple{Int,Int}}}[]
     inverse(variable) =
-        (step_in = inv_steps[variable.step_out], step_out = inv_steps[variable.step_in])
+        (step_in = inv_steps[variable.step_out...], step_out = inv_steps[variable.step_in...])
 
     for step_in in steps
         for step_out in steps
@@ -271,7 +271,7 @@ function construct_transitions(
 
         ci = MOI.add_constraint(
             optimizer,
-            MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(ones(length(xs)), xs), 0.0),
+            MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(ones(xs), xs), 0.0),
             MOI.EqualTo(0.0),
         )
         push!(constraint_idxs, ci)
@@ -284,17 +284,13 @@ function construct_transitions(
         v = nothing
         step_in = nothing
 
-        for empty_v in eachindex(weights)
-            if v !== nothing
-                break
-            end
+        @show isinvalid.(transitions)
 
-            for empty_step_in in steps
-                if isinvalid(transitions[empty_step_in..., empty_v])
-                    v = empty_v
-                    step_in = empty_step_in
-                    break
-                end
+        for it in CartesianIndices(transitions)
+            if isinvalid(transitions[it])
+                step_in = Tuple(it)[1:end-1]
+                v = Tuple(it)[end]
+                break
             end
         end
 
@@ -317,7 +313,7 @@ function construct_transitions(
 
         MOI.optimize!(optimizer)
 
-        if !MOI.get(optimizer, MOI.TerminationStatusCode()) == MOI.OPTIMAL
+        if MOI.get(optimizer, MOI.TerminationStatus()) != MOI.OPTIMAL
             error(
                 "transition probability optimization failed: $(MOI.get(optimizer, MOI.TerminationStatus()))",
             )
