@@ -20,4 +20,19 @@
             end
         end
     end
+
+    @testset "Random Hamiltonian" begin
+        dimss = [(2, 2), (4, 4), (2, 4)]
+
+        for dims in dimss
+            @testset "dims = $(dims)" begin
+                Hbond = rand(prod(dims), prod(dims))
+
+                vd = S.VertexData(dims, Hbond)
+                for t in vd.transitions
+                    @test vd.transition_cumprobs[t.offset+t.length] ≈ 1.0
+                end
+            end
+        end
+    end
 end
