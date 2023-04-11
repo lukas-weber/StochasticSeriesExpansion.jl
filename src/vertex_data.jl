@@ -257,7 +257,17 @@ function construct_transitions(
         MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(cost, x), 0.0),
     )
     MOI.set(optimizer, MOI.ObjectiveSense(), MOI.MIN_SENSE)
-    #MOI.set(optimizer, MOI.AbsoluteGapTolerance(), lp_tolerance)
+    MOI.set(
+        optimizer,
+        MOI.RawOptimizerAttribute("primal_feasibility_tolerance"),
+        lp_tolerance,
+    )
+    MOI.set(
+        optimizer,
+        MOI.RawOptimizerAttribute("dual_feasibility_tolerance"),
+        lp_tolerance,
+    )
+    MOI.set(optimizer, MOI.Silent(), true)
 
     for xi in x
         MOI.add_constraint(optimizer, xi, MOI.GreaterThan(0.0))
@@ -287,16 +297,17 @@ function construct_transitions(
         v = nothing
         step_in = nothing
 
-        for it in CartesianIndices(transitions)
-            if isinvalid(transitions[it])
-                step_in = Tuple(it)[1:end-1]
-                v = Tuple(it)[end]
+        for empty_v = 1:length(weights)
+            iempty_step_in = findfirst(s -> isinvalid(transitions[s..., empty_v]), steps)
+            if iempty_step_in !== nothing
+                v = empty_v
+                step_in = steps[iempty_step_in]
                 break
             end
         end
 
-        if v === nothing # all transitions calculated
-            break
+        if v === nothing
+            break # all transitions calculated
         end
 
         for step_out in steps

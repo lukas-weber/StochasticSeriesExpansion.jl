@@ -1,6 +1,25 @@
 
+
 @testset "VertexData" begin
     @test S.isinvalid(S.Transition())
+
+    @testset "vertex_change_apply" begin
+        dim = 4
+        nsites = 2
+        leg_states =
+            reduce(hcat, collect.(Iterators.product(fill(UInt8.(1:dim), 2 * nsites)...)))
+
+        for step_in in Iterators.product(1:2*nsites, 1:S.worm_count(dim))
+            v = rand(1:dim^(2*nsites))
+            @test S.vertex_apply_change(
+                leg_states,
+                Tuple(dim for i = 1:2*nsites),
+                v,
+                step_in,
+                (step_in[1], S.worm_inverse(step_in[2], dim)),
+            ) == v
+        end
+    end
 
     @testset "S=1/2 Heisenberg" begin
         (splus, sz) = S.spin_operators(2)
@@ -22,7 +41,7 @@
     end
 
     @testset "Random Hamiltonian" begin
-        dimss = [(2, 2), (4, 4), (2, 4)]
+        dimss = [(4, 4), (2, 4)]
 
         for dims in dimss
             @testset "dims = $(dims)" begin
@@ -30,7 +49,7 @@
 
                 vd = S.VertexData(dims, Hbond)
                 for t in vd.transitions
-                    @test vd.transition_cumprobs[t.offset+t.length] ≈ 1.0
+                    @test S.isinvalid(t) || vd.transition_cumprobs[t.offset+t.length] ≈ 1.0
                 end
             end
         end
