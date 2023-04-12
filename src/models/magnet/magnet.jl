@@ -23,7 +23,7 @@ end
 ``H = \\sum_{ij} J_ij S_i\\cdotS_j + d_ij S_i^z S_j^z``
 """
 struct Magnet <: S.AbstractModel
-    lat::S.Lattice
+    lattice::S.Lattice
 
     bond_params::Vector{MagnetBondParams}
     site_params::Vector{MagnetSiteParams}
@@ -131,11 +131,11 @@ S.leg_count(::Type{Magnet}) = 4
 function S.generate_sse_data(mag::Magnet)
     vertex_data = [
         generate_vertex_data(mag, uc_bond, bond) for
-        (uc_bond, bond) in zip(mag.lat.uc.bonds, mag.bond_params)
+        (uc_bond, bond) in zip(mag.lattice.uc.bonds, mag.bond_params)
     ]
 
     sites = [S.Site(Int(s.spin_mag * 2 + 1)) for s in mag.site_params]
-    bonds = [S.Bond(bond.type, (bond.i, bond.j)) for bond in mag.lat.bonds]
+    bonds = [S.Bond(bond.type, (bond.i, bond.j)) for bond in mag.lattice.bonds]
 
     return S.SSEData(vertex_data, sites, bonds)
 end
