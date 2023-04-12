@@ -7,7 +7,7 @@ include("vertex_data.jl")
 include("sse_data.jl")
 include("vertex_list.jl")
 include("abstract_model.jl")
-include("estimator.jl")
+#include("estimator.jl")
 include("sse.jl")
 
 include("models/common/operators.jl")

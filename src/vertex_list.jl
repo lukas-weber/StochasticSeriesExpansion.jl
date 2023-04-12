@@ -1,11 +1,11 @@
-mutable struct VertexList{Model}
+mutable struct VertexList{NSites}
     vertices::Array{Int}
     v_first::Matrix{Int}
     v_last::Matrix{Int}
 end
 
-function VertexList{Model}(site_count::Integer) where {Model}
-    return VertexList(
+function VertexList{NSites}(site_count::Integer) where {NSites}
+    return VertexList{NSites}(
         zeros(Int, 0, 0, 0),
         zeros(Int, 2, site_count),
         zeros(Int, 2, site_count),
@@ -13,12 +13,12 @@ function VertexList{Model}(site_count::Integer) where {Model}
 end
 
 function make_vertex_list!(
-    vl::VertexList{Model},
+    vl::VertexList{NSites},
     operators::AbstractVector{<:OperCode},
     data::SSEData,
-) where {Model}
+) where {NSites}
     if size(vl.vertices, 2) != length(operators)
-        vl.vertices = Array{Int,3}(undef, 2, leg_count(Model), length(operators))
+        vl.vertices = Array{Int,3}(undef, 2, 2 * NSites, length(operators))
     end
 
     vl.vertices .= -1
@@ -30,8 +30,8 @@ function make_vertex_list!(
             continue
         end
 
-        b = data.bonds(get_bond(op))
-        for s = 1:leg_count(Model)÷2
+        b = data.bonds[get_bond(op)]
+        for s = 1:NSites
             (s1, p1) = vl.v_last[:, b.sites[s]]
             if p1 != -1
                 vl.vertices[:, s1, p1] .= (s, p)
@@ -39,7 +39,7 @@ function make_vertex_list!(
             else
                 vl.v_first[:, b.sites[s]] .= (s, p)
             end
-            vl.v_last[:, b.sites[s]] .= (leg_count(Model) ÷ 2 + s, p)
+            vl.v_last[:, b.sites[s]] .= (NSites + s, p)
         end
     end
 

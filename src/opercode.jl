@@ -18,9 +18,12 @@ function VertexCode(diagonal::Bool, vertex_idx::Integer)
     return v
 end
 
-isdiagonal(v::VertexCode) = v.code & 1
+isdiagonal(v::VertexCode) = Bool(v.code & 1)
 isinvalid(v::VertexCode) = v.code >= 1 << vertex_code_maxbits
-get_vertex_idx(v::VertexCode) = v.code >> 1
+function get_vertex_idx(v::VertexCode)
+    @assert !isinvalid(v)
+    return v.code >> 1
+end
 
 Base.show(io::IO, v::VertexCode) =
     print(io, isinvalid(v) ? "VertexCode(invalid)" : "VertexCode($(get_vertex_idx(v)))")

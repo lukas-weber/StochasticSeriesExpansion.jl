@@ -3,7 +3,7 @@ using HDF5
 
 using Random
 
-Base.@kwdef mutable struct MC{Model<:AbstractModel} <: LoadLeveller.AbstractMC
+Base.@kwdef mutable struct MC{Model<:AbstractModel,NSites} <: LoadLeveller.AbstractMC
     T::Float64 = 0.0
 
     target_worm_length_fraction::Float64
@@ -16,17 +16,18 @@ Base.@kwdef mutable struct MC{Model<:AbstractModel} <: LoadLeveller.AbstractMC
     state::Vector{StateIdx}
 
     model::Model
-    sse_data::SSEData{Model}
+    sse_data::SSEData{NSites}
 
-    vertex_list::VertexList
+    vertex_list::VertexList{NSites}
 end
 
 function MC{Model}(params::AbstractDict) where {Model}
     model = Model(params)
     sse_data = generate_sse_data(model)
-    return MC{Model}(
-        vertex_list = VertexList(site_count(sse_data)),
-        v_last = zeros(Int, site_count(sse_data)),
+    return MC{Model,leg_count(Model) ÷ 2}(
+        vertex_list = VertexList{leg_count(Model) ÷ 2}(length(sse_data.sites)),
+        operators = OperCode[],
+        state = StateIdx[],
         T = params[:T],
         target_worm_length_fraction = get(params, :target_worm_length_fraction, 2.0),
         model = model,
@@ -35,13 +36,11 @@ function MC{Model}(params::AbstractDict) where {Model}
 end
 
 function LoadLeveller.init!(mc::MC, ctx::LoadLeveller.MCContext, params::AbstractDict)
-    mc.state = [
-        floor(StateIdx, rand(ctx.rng, site_count(mc.sse_data)) * mc.sse_data.sites[i].dim) for i = 1:site_count(mc.sse_data)
-    ]
+    mc.state = [rand(ctx.rng, StateIdx.(1:s.dim)) for s in mc.sse_data.sites]
 
     init_opstring_cutoff =
-        get(params, :init_opstring_cutoff, round(Int, site_count(mc.sse_data) * mc.T))
-    mc.operators = [make_identity() for i = 1:init_opstring_cutoff]
+        get(params, :init_opstring_cutoff, round(Int, length(mc.sse_data.sites) * mc.T))
+    mc.operators = [OperCode(Identity) for i = 1:init_opstring_cutoff]
 
     diagonal_warmup_sweeps = get(params, :diagonal_warmup_sweeps, 5)
     for i = 1:diagonal_warmup_sweeps
@@ -54,7 +53,7 @@ end
 function LoadLeveller.sweep!(mc::MC, ctx::LoadLeveller.MCContext)
     diagonal_update(mc, ctx)
     make_vertex_list!(mc.vertex_list, mc.operators, mc.sse_data)
-    worm_update()
+    worm_update(mc, ctx)
 
     return nothing
 end
@@ -121,38 +120,42 @@ function LoadLeveller.register_evaluables(
 end
 
 
-function diagonal_update(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Model}
-    if mc.num_operators >= length(mc.operators * 0.5)
+function diagonal_update(
+    mc::MC{Model,NSites},
+    ctx::LoadLeveller.MCContext,
+) where {Model,NSites}
+    if mc.num_operators >= length(mc.operators) * 0.5
         if is_thermalized(ctx)
             @warn "spin array resized after thermalization"
         end
         old_length = length(mc.operators)
         resize!(mc.operators, ceil(Int64, old_length * 1.5 + 100))
-        mc.operators[old_length+1:end] .= OperCode(Identity)
+        mc.operators[old_length+1:end] .= [OperCode(Identity)]
     end
 
-    p_make_bond_raw = bond_count(mc.sse_data) / mc.T
-    p_remove_bond_raw = mc.T / bond_count(mc.sse_data)
+    p_make_bond_raw = length(mc.sse_data.bonds) / mc.T
+    p_remove_bond_raw = mc.T / length(mc.sse_data.bonds)
 
     tmpstate = copy(mc.state)
 
     for (iop, op) in enumerate(mc.operators)
         if isidentity(op)
-            bond = floor(Int, rand(ctx.rng) * bond_count(mc.sse_data))
+            bond = rand(ctx.rng, 1:length(mc.sse_data.bonds))
             b = mc.sse_data.bonds[bond]
 
             # TODO: define a function for this?
             state_idx = 0
-            for s = 1:leg_count(Model)÷2
+            for s = 1:NSites
                 state_idx *= mc.sse_data.sites[b.sites[s]].dim
-                state_idx += mc.state[b.sites[s]]
+                state_idx += mc.state[b.sites[s]] - 1
             end
+            state_idx += 1
 
             vertex_data = get_vertex_data(mc.sse_data, bond)
-            new_vert = diagonal_vertex(vertex_data, state_idx)
-            weight = vertex_weight(vertex_data, new_vert)
+            new_vert = get_diagonal_vertex(vertex_data, state_idx)
+            weight = get_vertex_weight(vertex_data, new_vert)
 
-            p_make_bond = p_make_bond_raw / (length(mc.operators - mc.num_operators))
+            p_make_bond = p_make_bond_raw / (length(mc.operators) - mc.num_operators)
 
             if rand(ctx.rng) < p_make_bond * weight
                 mc.operators[iop] = OperCode(bond, new_vert)
@@ -163,7 +166,7 @@ function diagonal_update(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Mode
             vertex_data = get_vertex_data(mc.sse_data, bond)
 
             if isdiagonal(op)
-                weight = vertex_weight(vertex_data, get_vertex(op))
+                weight = get_vertex_weight(vertex_data, get_vertex(op))
                 p_remove_bond =
                     (length(mc.operators) - mc.num_operators + 1) * p_remove_bond_raw
                 if rand(ctx.rng) * weight < p_remove_bond
@@ -172,9 +175,9 @@ function diagonal_update(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Mode
                 end
             else
                 b = mc.sse_data.bonds[bond]
-                leg_state = get_legstate(vertex_data, get_vertex(op))
-                for s = 1:leg_count(Model)÷2
-                    mc.state[b.sites[s]] = leg_state[leg_count(Model)÷2+s]
+                leg_state = get_leg_state(vertex_data, get_vertex(op))
+                for s = 1:NSites
+                    mc.state[b.sites[s]] = leg_state[NSites+s]
                 end
             end
         end
@@ -211,7 +214,8 @@ function worm_update(mc::MC, ctx::LoadLeveller.MCContext)
             mc.state[i] = rand(ctx.rng, 1:mc.sse_data.sites[i].dim)
         else
             op = mc.operators[p]
-            mc.state[i] = get_vertex_data(mc.sse_data, get_bond(op)).leg_state[l]
+            mc.state[i] =
+                get_leg_state(get_vertex_data(mc.sse_data, get_bond(op)), get_vertex(op))[l]
         end
     end
 
@@ -225,12 +229,20 @@ function worm_traverse(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Model}
 
     worm_length = 1
 
-    p0 = rand(ctx.rng, 1:length(mc.operators))
-    l0 = rand(ctx.rng, 1:leg_count(Model))
+    p0 = 0
+    l0 = 0
+
+    while true
+        p0 = rand(ctx.rng, 1:length(mc.operators))
+        l0 = rand(ctx.rng, 1:leg_count(Model))
+        if mc.vertex_list.vertices[1, l0, p0] > 0
+            break
+        end
+    end
 
     op0 = mc.operators[p0]
-    site0 = mc.sse_data.bonds[get_bond(op0)].sites[l0%(leg_count(Model)÷2)]
-    wormfunc0 = rand(ctx.rng, 1:worm_count(mc.sse_data.sites[site0]))
+    site0 = mc.sse_data.bonds[get_bond(op0)].sites[site_of_leg(l0, leg_count(Model) ÷ 2)]
+    wormfunc0 = rand(ctx.rng, 1:worm_count(mc.sse_data.sites[site0].dim))
 
     p = p0
     leg_in = l0
@@ -240,21 +252,21 @@ function worm_traverse(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Model}
         op = mc.operators[p0]
         bond = get_bond(op)
         (leg_out, wormfunc_out, new_vertex) = scatter(
-            get_vertex_data(
-                mc.sse_data,
-                bond,
-                get_vertex(op),
-                leg_in,
-                wormfunc,
-                rand(ctx.rng),
-            ),
+            get_vertex_data(mc.sse_data, bond),
+            get_vertex(op),
+            leg_in,
+            wormfunc,
+            rand(ctx.rng),
         )
 
-        mc.operators[p] = OperCode(bond, new_vertex)
-        site_out =
-            mc.sse_data.sites[mc.sse_data.bonds[bond].sites[leg_out%(leg_count(Model)÷2)]]
 
-        if p == p0 && leg_out == l0 && wormfunc_out == worm_inverse(wormfunc0, site_out)
+        mc.operators[p] = OperCode(bond, new_vertex)
+        site_out = mc.sse_data.sites[mc.sse_data.bonds[bond].sites[site_of_leg(
+            leg_out,
+            leg_count(Model) ÷ 2,
+        )]]
+
+        if p == p0 && leg_out == l0 && wormfunc_out == worm_inverse(wormfunc0, site_out.dim)
             break
         end
 

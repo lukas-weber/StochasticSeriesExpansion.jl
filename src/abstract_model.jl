@@ -14,5 +14,5 @@ macro stubT(func::Expr)
     )
 end
 
-@stubT leg_count(::Type{Model}) where {Model<:AbstractModel}
+@stubT leg_count(::Type{<:AbstractModel})
 @stub generate_sse_data(model::AbstractModel)::SSEData

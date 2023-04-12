@@ -16,7 +16,7 @@ struct SSEData{NSites}
     energy_offset::Float64
 end
 
-function SSEData{NSites}(
+function SSEData(
     vertex_data::AbstractVector{VertexData{NSites}},
     sites::Vector{Site},
     bonds::Vector{Bond{NSites}},

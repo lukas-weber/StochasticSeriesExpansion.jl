@@ -29,7 +29,6 @@ struct Magnet{D,F} <: S.AbstractModel
     site_params::Vector{MagnetSiteParams}
 end
 
-
 struct ParameterMap
     map::Union{Nothing,Dict}
 end
@@ -102,8 +101,8 @@ function magnetization_state(
 end
 
 function generate_vertex_data(mag::Magnet{D,F}, uc_bond, bond::MagnetBondParams) where {D,F}
-    dimi = mag.site_params[uc_bond.iuc].spin_mag * 2 + 1
-    dimj = mag.site_params[uc_bond.juc].spin_mag * 2 + 1
+    dimi = Int(mag.site_params[uc_bond.iuc].spin_mag * 2 + 1)
+    dimj = Int(mag.site_params[uc_bond.juc].spin_mag * 2 + 1)
 
     splusi, szi = S.spin_operators(F, dimi)
     splusj, szj = S.spin_operators(F, dimj)
@@ -122,15 +121,18 @@ function generate_vertex_data(mag::Magnet{D,F}, uc_bond, bond::MagnetBondParams)
     return S.VertexData((dimi, dimj), H)
 end
 
+S.leg_count(::Type{Magnet}) = 4
+
 function S.generate_sse_data(mag::Magnet)
     vertex_data = [
         generate_vertex_data(mag, uc_bond, bond) for
         (uc_bond, bond) in zip(mag.lat.uc.bonds, mag.bond_params)
     ]
 
-    sites = [Int(s.spin_mag * 2 + 1) for s in mag.site_params]
+    sites = [S.Site(Int(s.spin_mag * 2 + 1)) for s in mag.site_params]
+    bonds = [S.Bond(bond.type, (bond.i, bond.j)) for bond in mag.lat.bonds]
 
-    return S.SSEData(vertex_data, sites, mag.lat.bonds)
+    return S.SSEData(vertex_data, sites, bonds)
 end
 
 end
