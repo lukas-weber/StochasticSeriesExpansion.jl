@@ -15,13 +15,12 @@ end
 function make_vertex_list!(
     vl::VertexList{NSites},
     operators::AbstractVector{<:OperCode},
-    data::SSEData,
+    bonds::AbstractVector{<:Bond{NSites}},
 ) where {NSites}
     if size(vl.vertices, 2) != length(operators)
-        vl.vertices = Array{Int,3}(undef, 2, 2 * NSites, length(operators))
+        vl.vertices = fill(-1, 2, 2 * NSites, length(operators))
     end
 
-    vl.vertices .= -1
     vl.v_first .= -1
     vl.v_last .= -1
 
@@ -30,7 +29,7 @@ function make_vertex_list!(
             continue
         end
 
-        b = data.bonds[get_bond(op)]
+        b = bonds[get_bond(op)]
         for s = 1:NSites
             (s1, p1) = vl.v_last[:, b.sites[s]]
             if p1 != -1

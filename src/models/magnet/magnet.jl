@@ -118,7 +118,13 @@ function generate_vertex_data(mag::Magnet{D,F}, uc_bond, bond::MagnetBondParams)
         bond.Dx / 4 * (kron((splusi + splusi')^2, idj) + kron(idi, (splusj + splusj')^2)) +
         bond.Dz * (kron(szi^2, idj) + kron(idi, szj^2))
 
-    return S.VertexData((dimi, dimj), H)
+    energy_offset_factor = 0.25
+    # use the deterministic solution for S == 1//2
+    if dimi == dimj == 2 && bond.hz == 0
+        energy_offset_factor = 0.0
+    end
+
+    return S.VertexData((dimi, dimj), H; energy_offset_factor = energy_offset_factor)
 end
 
 S.leg_count(::Type{Magnet}) = 4

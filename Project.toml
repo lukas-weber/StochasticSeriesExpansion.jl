@@ -4,6 +4,7 @@ authors = ["Lukas Weber <49278367+lukas-weber@users.noreply.github.com>"]
 version = "0.1.0"
 
 [deps]
+Formatting = "59287772-0a20-5a39-b81b-1366585eb4c0"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

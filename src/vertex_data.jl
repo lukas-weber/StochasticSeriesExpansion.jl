@@ -1,5 +1,6 @@
 using HiGHS
 using LinearAlgebra
+using Formatting
 import MathOptInterface as MOI
 
 Base.@kwdef struct Transition
@@ -76,35 +77,29 @@ end
 vertex_count(vd::VertexData) = length(vd.weights)
 get_diagonal_vertex(vd::VertexData, compound_state_idx::Integer) =
     vd.diagonal_vertices[compound_state_idx]
-get_vertex_weight(vd::VertexData, v::VertexCode) = vd.weights[get_vertex_idx(v)]
+get_vertex_weight(vd::VertexData, v::VertexCode) =
+    isinvalid(v) ? 0.0 : vd.weights[get_vertex_idx(v)]
 get_sign(vd::VertexData, v::VertexCode) = vd.signs[get_vertex_idx(v)]
 get_leg_state(vd::VertexData, v::VertexCode) = @view vd.leg_states[:, get_vertex_idx(v)]
 
 function scatter(
-    vd::VertexData,
+    vd::VertexData{NSites},
     v::VertexCode,
     leg_in::Integer,
     worm_in::WormIdx,
     random::AbstractFloat,
-)
+) where {NSites}
     vi = get_vertex_idx(v)
 
     t = vd.transitions[leg_in, worm_in, vi]
 
-    @debug begin
-        @assert worm_in < worm_count(vd.dims[leg_in%length(vd.dims)])
-        @assert !isinvalid(t)
-    end
-
     out =
         findfirst(p -> random < p, @view vd.transition_cumprobs[t.offset:t.offset+t.length])
+    (leg_out, worm_out) = vd.transition_step_outs[t.offset+out-1]
 
-    (leg_out, worm_out) = vd.transition_step_outs[t.offset+out]
-
-    return (leg_out, worm_out, vd.transition_targets[t.offset+out])
+    return (leg_out, worm_out, vd.transition_targets[t.offset+out-1])
 end
 
-get_weight(vd::VertexData, v::VertexCode) = isinvalid(v) ? 0 : vd.weights[get_vertex_idx(v)]
 
 
 function calc_energy_offset(H::AbstractMatrix, energy_offset_factor::AbstractFloat)
@@ -399,4 +394,39 @@ function construct_transitions(
     end
 
     return transitions, transition_cumprobs, transition_targets, transition_step_outs
+end
+
+function Base.show(io::IO, vd::VertexData{NSites}) where {NSites}
+    println(io, "VertexData(")
+    println(io, "weights = $(vd.weights)")
+    for v = 1:size(vd.transitions, 3)
+        println(
+            "vertex $(v): [$(join([format("{:d}", s) for s in vd.leg_states[:,v]], ","))]",
+        )
+        for worm = 1:size(vd.transitions, 2)
+            for leg_in = 1:size(vd.transitions, 1)
+                t = vd.transitions[leg_in, worm, v]
+                if isinvalid(t)
+                    continue
+                end
+
+                probs = diff(vd.transition_cumprobs[t.offset:t.offset+t.length])
+                targets = vd.transition_targets[t.offset:t.offset+t.length]
+                step_outs = vd.transition_step_outs[t.offset:t.offset+t.length]
+
+                printfmtln(
+                    io,
+                    "({},{}) {}| {}",
+                    leg_in,
+                    worm,
+                    join([format("{:2f}", p) for p in probs]),
+                    join([
+                        format("({},{},{:2d})", sout..., get_vertex_idx(tar)) for
+                        (sout, tar) in zip(step_outs, targets)
+                    ]),
+                )
+            end
+        end
+    end
+    print(io, ")")
 end

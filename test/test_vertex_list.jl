@@ -2,21 +2,17 @@
 
     site_count = 4
     leg_count = 4
-    bonds = [
-        S.Bond(1, (1,2)),
-        S.Bond(1, (2,3)),
-        S.Bond(1, (1,3)),
-    ]
+    bonds = [S.Bond(1, (1, 2)), S.Bond(1, (2, 3)), S.Bond(1, (1, 3))]
 
     v = S.VertexCode(false, 1)
     operators = [
         S.OperCode(S.Identity),
         S.OperCode(S.Identity),
-        S.OperCode(1,v),
+        S.OperCode(1, v),
         S.OperCode(S.Identity),
-        S.OperCode(1,v),
-        S.OperCode(2,v),
-        S.OperCode(3,v),
+        S.OperCode(1, v),
+        S.OperCode(2, v),
+        S.OperCode(3, v),
     ]
 
     expected = fill(-1, 2, leg_count, length(operators))
@@ -37,7 +33,7 @@
         5 6 3 6
     ]
 
-    vl = S.VertexList{leg_count÷2}(site_count)
+    vl = S.VertexList{leg_count ÷ 2}(site_count)
     S.make_vertex_list!(vl, operators, bonds)
 
     @test vl.v_last == [

@@ -8,7 +8,7 @@ Base.@kwdef mutable struct MC{Model<:AbstractModel,NSites} <: LoadLeveller.Abstr
 
     target_worm_length_fraction::Float64
     avg_worm_length::Float64 = 1.0
-    num_worms::Float64 = 0.0
+    num_worms::Float64 = 5.0
 
     num_operators::Int64 = 0.0
 
@@ -189,7 +189,7 @@ end
 function worm_update(mc::MC, ctx::LoadLeveller.MCContext)
     total_worm_length = 1.0
     for i = 1:ceil(Int, mc.num_worms)
-        worm_length = worm_traverse(mc, ctx)
+        worm_length = worm_traverse!(mc, ctx)
         total_worm_length += worm_length
     end
 
@@ -222,12 +222,10 @@ function worm_update(mc::MC, ctx::LoadLeveller.MCContext)
     return nothing
 end
 
-function worm_traverse(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Model}
+function worm_traverse!(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Model}
     if mc.num_operators == 0
         return 0
     end
-
-    worm_length = 1
 
     p0 = 0
     l0 = 0
@@ -244,27 +242,40 @@ function worm_traverse(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Model}
     site0 = mc.sse_data.bonds[get_bond(op0)].sites[site_of_leg(l0, leg_count(Model) ÷ 2)]
     wormfunc0 = rand(ctx.rng, 1:worm_count(mc.sse_data.sites[site0].dim))
 
-    p = p0
-    leg_in = l0
-    wormfunc = wormfunc0
+    return worm_traverse!(
+        (l0, p0, wormfunc0),
+        mc.operators,
+        mc.vertex_list.vertices,
+        mc.sse_data,
+        ctx.rng,
+    )
+end
+
+function worm_traverse!(
+    start::NTuple{3,<:Integer},
+    operators::AbstractVector{<:OperCode},
+    vertices::AbstractArray,
+    sse_data::SSEData{NSites},
+    rng::AbstractRNG,
+) where {NSites}
+    (l0, p0, wormfunc0) = start
+    (leg_in, p, wormfunc) = start
+
+    worm_length = 1
 
     while true
-        op = mc.operators[p0]
+        op = operators[p]
         bond = get_bond(op)
         (leg_out, wormfunc_out, new_vertex) = scatter(
-            get_vertex_data(mc.sse_data, bond),
+            get_vertex_data(sse_data, bond),
             get_vertex(op),
             leg_in,
             wormfunc,
-            rand(ctx.rng),
+            rand(rng),
         )
 
-
-        mc.operators[p] = OperCode(bond, new_vertex)
-        site_out = mc.sse_data.sites[mc.sse_data.bonds[bond].sites[site_of_leg(
-            leg_out,
-            leg_count(Model) ÷ 2,
-        )]]
+        operators[p] = OperCode(bond, new_vertex)
+        site_out = sse_data.sites[sse_data.bonds[bond].sites[site_of_leg(leg_out, NSites)]]
 
         if p == p0 && leg_out == l0 && wormfunc_out == worm_inverse(wormfunc0, site_out.dim)
             break
@@ -273,7 +284,7 @@ function worm_traverse(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Model}
         worm_length += 1
 
         wormfunc = wormfunc_out
-        (leg_in, p) = mc.vertex_list.vertices[:, leg_out, p]
+        (leg_in, p) = vertices[:, leg_out, p]
 
         if p == p0 && leg_in == l0 && wormfunc == wormfunc0
             break
@@ -292,4 +303,14 @@ function measure_sign(operators::AbstractVector{<:OperCode}, data::SSEData)
     end
 
     return (sign & 1) ? -1 : 1
+end
+
+function print_opstring(operators::AbstractVector{<:OperCode}, data::SSEData)
+    for (p, op) in enumerate(operators)
+        if !isidentity(op)
+            println(
+                "$(p): $(data.bonds[get_bond(op)].sites) - $(get_vertex_idx(get_vertex(op)))[$(join(Int.(get_leg_state(get_vertex_data(data, get_bond(op)), get_vertex(op))),","))]",
+            )
+        end
+    end
 end
