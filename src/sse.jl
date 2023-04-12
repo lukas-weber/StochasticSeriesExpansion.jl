@@ -52,7 +52,7 @@ end
 
 function LoadLeveller.sweep!(mc::MC, ctx::LoadLeveller.MCContext)
     diagonal_update(mc, ctx)
-    make_vertex_list!(mc.vertex_list, mc.operators, mc.sse_data)
+    make_vertex_list!(mc.vertex_list, mc.operators, mc.sse_data.bonds)
     worm_update(mc, ctx)
 
     return nothing
