@@ -136,8 +136,6 @@ function diagonal_update(
     p_make_bond_raw = length(mc.sse_data.bonds) / mc.T
     p_remove_bond_raw = mc.T / length(mc.sse_data.bonds)
 
-    tmpstate = copy(mc.state)
-
     for (iop, op) in enumerate(mc.operators)
         if isidentity(op)
             bond = rand(ctx.rng, 1:length(mc.sse_data.bonds))
@@ -182,8 +180,6 @@ function diagonal_update(
             end
         end
     end
-
-    @assert tmpstate == mc.state
 end
 
 function worm_update(mc::MC, ctx::LoadLeveller.MCContext)

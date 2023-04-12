@@ -22,10 +22,10 @@ end
 
 ``H = \\sum_{ij} J_ij S_i\\cdotS_j + d_ij S_i^z S_j^z``
 """
-struct Magnet{D,F} <: S.AbstractModel
-    lat::S.Lattice{D,F}
+struct Magnet <: S.AbstractModel
+    lat::S.Lattice
 
-    bond_params::Vector{MagnetBondParams{F}}
+    bond_params::Vector{MagnetBondParams}
     site_params::Vector{MagnetSiteParams}
 end
 
@@ -54,6 +54,9 @@ function Magnet(params::AbstractDict{Symbol,<:Any})
     Lx = params[:Lx]
     Ly = get(params, :Ly, Lx)
     lat = S.Lattice(params[:unitcell], (Lx, Ly))
+
+    @assert Lx * Ly > 0
+    @assert length(lat.bonds) > 0
 
     parameter_map = ParameterMap(get(params, :parameter_map, nothing))
 
@@ -92,22 +95,18 @@ function Magnet(params::AbstractDict{Symbol,<:Any})
     return Magnet(lat, full_bond_params, full_site_params)
 end
 
-function magnetization_state(
-    mag::Magnet{D,F},
-    site_idx::Integer,
-    state_idx::Integer,
-)::F where {D,F}
+function magnetization_state(mag::Magnet, site_idx::Integer, state_idx::Integer)
     return -mag.site_params[site_idx].spin_mag + state_idx - 1
 end
 
-function generate_vertex_data(mag::Magnet{D,F}, uc_bond, bond::MagnetBondParams) where {D,F}
+function generate_vertex_data(mag::Magnet, uc_bond, bond::MagnetBondParams)
     dimi = Int(mag.site_params[uc_bond.iuc].spin_mag * 2 + 1)
     dimj = Int(mag.site_params[uc_bond.juc].spin_mag * 2 + 1)
 
-    splusi, szi = S.spin_operators(F, dimi)
-    splusj, szj = S.spin_operators(F, dimj)
-    idi = diagm(ones(F, dimi))
-    idj = diagm(ones(F, dimj))
+    splusi, szi = S.spin_operators(Float64, dimi)
+    splusj, szj = S.spin_operators(Float64, dimj)
+    idi = diagm(ones(Float64, dimi))
+    idj = diagm(ones(Float64, dimj))
 
     H =
         bond.J * (

@@ -1,5 +1,5 @@
 mutable struct VertexList{NSites}
-    vertices::Array{Int}
+    vertices::Array{Int,3}
     v_first::Matrix{Int}
     v_last::Matrix{Int}
 end

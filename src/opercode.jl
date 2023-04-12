@@ -44,7 +44,7 @@ function OperCode(bond::Integer, vertex::VertexCode)
     return OperCode(1 | v << 1 | bond << (1 + vertex_code_maxbits))
 end
 
-@inline get_bond(o::OperCode) = o.code >> (1 + vertex_code_maxbits)
+@inline get_bond(o::OperCode)::Int = o.code >> (1 + vertex_code_maxbits)
 @inline get_vertex(o::OperCode) =
     VertexCode((o.code & ((1 << vertex_code_maxbits) - 1)) >> 1)
 
