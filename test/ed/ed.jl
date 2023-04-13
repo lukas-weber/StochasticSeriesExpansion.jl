@@ -1,5 +1,6 @@
 using LoadLeveller.JobTools
 using SparseArrays
+using DataFrames
 
 struct Lifter
     site_dims::Vector{Int}
@@ -26,7 +27,7 @@ function spin(l::Lifter, pos::Integer, idx::Integer)
     elseif idx == 2
         return lift(l, pos, 0.5im * dropzeros(splus - splus'))
     elseif idx == 3
-        return lift(l, pos, dropzeros(z))
+        return lift(l, pos, dropzeros(sz))
     end
     error("invalid spin index")
 end
@@ -61,8 +62,8 @@ struct Ensemble{F}
     ρ::Vector{F}
 end
 
-function Ensemble(Es::AbstractVector, psi::AbstractMatrix, Ts::AbstractVector)
-    Esnorm = Es - minimum(Es)
+function Ensemble(Ts::AbstractVector, Es::AbstractVector, psi::AbstractMatrix)
+    Enorm = Es - minimum(Es)
     ρ = exp(-Enorm ./ Ts')
     Z = sum(ρ, dims = 1)
     ρ ./= Z
@@ -86,22 +87,56 @@ function diag_mean(en::Ensemble, Adiag::AbstractVector)
     return sum(Adiag .* en.ρ, dims = 1)
 end
 
+@structequal S.Models.Magnet
 
-function summarize_tasks(job::JobInfo)
-    summarized_tasks = Tuple(TaskInfo, Vector{Float64})[]
-    Ts = Float64[]
+function summarize_tasks(job::JobInfo) where {Model}
+    summarized_tasks = Tuple{Vector{String},Vector{Float64},Dict{Symbol,Any}}[]
 
     for task in job.tasks
-        T = task.params[:T]
+
+        params = deepcopy(task.params)
+        T = pop!(params, :T)
+
+        model = Model(task.params)
+        existing = findfirst(t -> t[1] == model, summarized_tasks)
+        if existing === nothing
+            push!(summarized_tasks, ([task.name], [T], params))
+        else
+            push!(summarized_task[1], task.name)
+            push!(summarized_task[2], T)
+        end
     end
+
+    return summarized_tasks
 end
 
 
 function run_ed(::Type{Model}, job::JobInfo) where {Model}
-    results = []
+    results = Dict{Symbol,Any}[]
 
-    summarized_tasks = summarize_tasks(job)
-    for (i, task) in job.tasks
-        H = hamiltonian()
+    for (names, Ts, params) in summarize_tasks(job)
+        model = Model(params)
+        H = hamiltonian(model)
+
+        (Es, psi) = eigen(Symmetric(H))
+
+        ensemble = Ensemble(Ts, Es, psi)
+
+        Emean = diag_mean(ensemble, Es) / S.normalization_site_count(model)
+
+        obs = Dict(:Energy => Emean)
+
+        for (i, T) in enumerate(Ts)
+            push!(
+                results,
+                merge(
+                    Dict(:task => names[i], :T => T),
+                    params,
+                    Dict(obsname => obsval[i] for (obsname, obsval) in obs),
+                ),
+            )
+        end
     end
+
+    return DataFrame(results)
 end
