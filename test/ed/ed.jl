@@ -1,5 +1,6 @@
 using LoadLeveller.JobTools
 using SparseArrays
+using StructEquality
 using DataFrames
 
 struct Lifter
@@ -87,7 +88,7 @@ function diag_mean(en::Ensemble, Adiag::AbstractVector)
     return sum(Adiag .* en.ρ, dims = 1)
 end
 
-@structequal S.Models.Magnet
+@struct_equal S.Models.Magnet
 
 function summarize_tasks(job::JobInfo) where {Model}
     summarized_tasks = Tuple{Vector{String},Vector{Float64},Dict{Symbol,Any}}[]
