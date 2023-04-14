@@ -96,8 +96,10 @@ function Magnet(params::AbstractDict{Symbol,<:Any})
 end
 
 function magnetization_state(mag::Magnet, site_idx::Integer, state_idx::Integer)
-    return -mag.site_params[site_idx].spin_mag + state_idx - 1
+    return mag.site_params[site_idx].spin_mag - state_idx + 1
 end
+
+S.normalization_site_count(mag::Magnet) = S.site_count(mag.lattice)
 
 function generate_vertex_data(mag::Magnet, uc_bond, bond::MagnetBondParams)
     dimi = Int(mag.site_params[uc_bond.iuc].spin_mag * 2 + 1)

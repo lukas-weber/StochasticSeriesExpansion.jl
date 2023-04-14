@@ -1,4 +1,5 @@
 using LoadLeveller.JobTools
+using LinearAlgebra
 using SparseArrays
 using StructEquality
 using DataFrames
@@ -14,7 +15,7 @@ Lifter(site_dims::AbstractVector{<:Integer}) =
 function lift(l::Lifter, pos::Integer, op::AbstractMatrix)
     @assert all(size(op) .== l.site_dims[pos])
     dleft = l.cum_site_dims[pos]
-    dright = l.cum_site_dims[end] / l.cum_site_dims[pos+1]
+    dright = l.cum_site_dims[end] ÷ l.cum_site_dims[pos+1]
     return kron(kron(sparse(I, dleft, dleft), op), sparse(I, dright, dright))
 end
 
@@ -24,17 +25,17 @@ function spin(l::Lifter, pos::Integer, idx::Integer)
     (splus, sz) = S.spin_operators(l.site_dims[pos])
 
     if idx == 1
-        return lift(l, pos, 0.5 * dropzeros(splus + splus'))
+        return lift(l, pos, 0.5 * sparse(splus + splus'))
     elseif idx == 2
-        return lift(l, pos, 0.5im * dropzeros(splus - splus'))
+        return lift(l, pos, 0.5im * sparse(splus - splus'))
     elseif idx == 3
-        return lift(l, pos, dropzeros(sz))
+        return lift(l, pos, sparse(sz))
     end
     error("invalid spin index")
 end
 
 function heisen_bond(l::Lifter, posi::Integer, posj::Integer)
-    return sum([spin(l, posi, a) * spin(l, posj, a) for a = 1:3])
+    return real.(sum([spin(l, posi, a) * spin(l, posj, a) for a = 1:3]))
 end
 
 
@@ -48,24 +49,24 @@ function hamiltonian(magnet::S.Models.Magnet)
             params.J * heisen_bond(lifter, bond.i, bond.j) +
             params.d * spin(lifter, bond.i, 3) * spin(lifter, bond.j, 3) +
             params.hz * (spin(lifter, bond.i, 3) + spin(lifter, bond.j, 3))
-        +params.Dx * (spin(lifter, bond.i, 1)^2 + spin(lfiter, bond.j, 1)^2) +
-        params.Dz * (spin(lifter, bond.i, 1)^2 + spin(lfiter, bond.j, 3)^2)
+        +params.Dx * (spin(lifter, bond.i, 1)^2 + spin(lifter, bond.j, 1)^2) +
+        params.Dz * (spin(lifter, bond.i, 1)^2 + spin(lifter, bond.j, 3)^2)
     end
 
     return H
 end
 
 
-struct Ensemble{F}
+struct Ensemble{F,CF}
     Ts::Vector{F}
     Es::Vector{F}
-    psi::Matrix{Complex{F}}
-    ρ::Vector{F}
+    psi::Matrix{CF}
+    ρ::Matrix{F}
 end
 
 function Ensemble(Ts::AbstractVector, Es::AbstractVector, psi::AbstractMatrix)
-    Enorm = Es - minimum(Es)
-    ρ = exp(-Enorm ./ Ts')
+    Enorm = Es .- minimum(Es)
+    ρ = exp.(-Enorm ./ Ts')
     Z = sum(ρ, dims = 1)
     ρ ./= Z
 
@@ -90,7 +91,7 @@ end
 
 @struct_equal S.Models.Magnet
 
-function summarize_tasks(job::JobInfo) where {Model}
+function summarize_tasks(job::JobInfo)
     summarized_tasks = Tuple{Vector{String},Vector{Float64},Dict{Symbol,Any}}[]
 
     for task in job.tasks
@@ -98,8 +99,7 @@ function summarize_tasks(job::JobInfo) where {Model}
         params = deepcopy(task.params)
         T = pop!(params, :T)
 
-        model = Model(task.params)
-        existing = findfirst(t -> t[1] == model, summarized_tasks)
+        existing = findfirst(t -> t[2] == params, summarized_tasks)
         if existing === nothing
             push!(summarized_tasks, ([task.name], [T], params))
         else
@@ -119,7 +119,7 @@ function run_ed(::Type{Model}, job::JobInfo) where {Model}
         model = Model(params)
         H = hamiltonian(model)
 
-        (Es, psi) = eigen(Symmetric(H))
+        (Es, psi) = eigen(Symmetric(Matrix(H)))
 
         ensemble = Ensemble(Ts, Es, psi)
 

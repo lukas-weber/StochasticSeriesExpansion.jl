@@ -1,3 +1,4 @@
+using LoadLeveller
 using LoadLeveller.JobTools
 using LoadLeveller.ResultTools
 
@@ -28,7 +29,7 @@ function generate_test_jobs(
     Ts = range(0.02, 1.0, length = 7)
 
     tm.unitcell = S.UnitCells.square
-    tm.Lx = 4
+    tm.Lx = 2
     tm.J = 1.24
     tm.hz = 0.1
 
@@ -41,8 +42,8 @@ function generate_test_jobs(
     return jobs
 end
 
-function run_mc(::Type{Model}, job::JobInfo) where {Model<:S.AbstractModel}
-    LoadLeveller.start(LoadLeveller.RunnerSingle{job.mc}, job)
+function run_mc(job::JobInfo)
+    LoadLeveller.start(LoadLeveller.SingleRunner{job.mc}, job)
 
     return ResultTools.dataframe(job.jobdir * "/results.json")
 end
@@ -52,11 +53,11 @@ end
         jobs = generate_test_jobs(tmpdir, 10000, 4000)
 
         for job in jobs
-            @testset "$job.name" begin
+            @testset "$(job.name)" begin
                 get_model(::Type{S.MC{Model}}) where {Model} = Model
                 model = get_model(job.mc)
                 ed_data = run_ed(model, job)
-                mc_data = run_mc(model, job)
+                mc_data = run_mc(job)
                 @show ed_data, mc_data
             end
         end
