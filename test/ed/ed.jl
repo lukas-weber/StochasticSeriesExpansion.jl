@@ -115,6 +115,8 @@ end
 function run_ed(::Type{Model}, job::JobInfo) where {Model}
     results = Dict{Symbol,Any}[]
 
+    obsnames = [:Energy]
+
     for (names, Ts, params) in summarize_tasks(job)
         model = Model(params)
         H = hamiltonian(model)
@@ -139,5 +141,5 @@ function run_ed(::Type{Model}, job::JobInfo) where {Model}
         end
     end
 
-    return DataFrame(results)
+    return obsnames, DataFrame(results)
 end

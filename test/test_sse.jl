@@ -73,7 +73,7 @@ end
 
     ctx = MCContext{Random.Xoshiro}(params)
 
-    mc = S.MC{S.Models.Magnet}(params)
+    mc = S.mc(S.Models.Magnet)(params)
 
     LoadLeveller.init!(mc, ctx, params)
 

@@ -3,6 +3,10 @@ using HDF5
 
 using Random
 
+function mc(model::Type{<:AbstractModel})
+    return MC{model,leg_count(model) ÷ 2}
+end
+
 Base.@kwdef mutable struct MC{Model<:AbstractModel,NSites} <: LoadLeveller.AbstractMC
     T::Float64 = 0.0
 
@@ -21,10 +25,10 @@ Base.@kwdef mutable struct MC{Model<:AbstractModel,NSites} <: LoadLeveller.Abstr
     vertex_list::VertexList{NSites}
 end
 
-function MC{Model}(params::AbstractDict) where {Model}
+function MC{Model,NSites}(params::AbstractDict) where {Model,NSites}
     model = Model(params)
     sse_data = generate_sse_data(model)
-    return MC{Model,leg_count(Model) ÷ 2}(
+    return MC{Model,NSites}(
         vertex_list = VertexList{leg_count(Model) ÷ 2}(length(sse_data.sites)),
         operators = OperCode[],
         state = StateIdx[],
@@ -43,7 +47,7 @@ function LoadLeveller.init!(mc::MC, ctx::LoadLeveller.MCContext, params::Abstrac
     mc.operators = [OperCode(Identity) for i = 1:init_opstring_cutoff]
 
     diagonal_warmup_sweeps = get(params, :diagonal_warmup_sweeps, 5)
-    for i = 1:diagonal_warmup_sweeps
+    for _ = 1:diagonal_warmup_sweeps
         diagonal_update(mc, ctx)
     end
 
@@ -68,8 +72,8 @@ function LoadLeveller.measure!(mc::MC, ctx::LoadLeveller.MCContext)
     measure!(
         ctx,
         :SignEnergy,
-        -sign * mc.num_operators * mc.T -
-        mc.sse_data.energy_offset / normalization_site_count(mc.model),
+        -sign * (mc.num_operators * mc.T + mc.sse_data.energy_offset) /
+        normalization_site_count(mc.model),
     )
 
     return nothing
@@ -96,13 +100,14 @@ function LoadLeveller.read_checkpoint(mc::MC, in::HDF5.Group)
 end
 
 function LoadLeveller.register_evaluables(
-    ::Type{MC{Model}},
+    ::Type{<:MC{Model}},
     eval::LoadLeveller.Evaluator,
     params::AbstractDict,
 ) where {Model}
 
     model = Model(params)
-    register_evaluables(model, eval, params)
+
+    #register_evaluables(model, eval, params)
 
     evaluate!(eval, :Energy, [:SignEnergy, :Sign]) do energy, sign
         return energy / sign
@@ -294,11 +299,11 @@ function measure_sign(operators::AbstractVector{<:OperCode}, data::SSEData)
     sign = 0
     for op in operators
         if !isidentity(op)
-            sign += get_sign(get_vertex_data(data, get_bond(op)), op.vertex()) < 0
+            sign += get_sign(get_vertex_data(data, get_bond(op)), get_vertex(op)) < 0
         end
     end
 
-    return (sign & 1) ? -1 : 1
+    return Bool(sign & 1) ? -1 : 1
 end
 
 function print_opstring(operators::AbstractVector{<:OperCode}, data::SSEData)
