@@ -12,16 +12,12 @@ VertexCode(::Nothing) = VertexCode((1 << vertex_code_maxbits) + 1)
 
 function VertexCode(diagonal::Bool, vertex_idx::Integer)
     v = VertexCode(diagonal | (vertex_idx << 1))
-    @debug begin
-        @assert !isinvalid(v)
-    end
     return v
 end
 
 isdiagonal(v::VertexCode) = Bool(v.code & 1)
 isinvalid(v::VertexCode) = v.code >= 1 << vertex_code_maxbits
 function get_vertex_idx(v::VertexCode)
-    @assert !isinvalid(v)
     return v.code >> 1
 end
 
@@ -37,10 +33,6 @@ OperCode(::Type{Identity}) = OperCode(0)
 function OperCode(bond::Integer, vertex::VertexCode)
     v = vertex.code
 
-    @debug begin
-        @assert !isinvalid(v)
-        @assert bond < (1 << (8 * sizeof(OperCodeUInt) - vertex_code_maxbits - 1))
-    end
     return OperCode(1 | v << 1 | bond << (1 + vertex_code_maxbits))
 end
 
