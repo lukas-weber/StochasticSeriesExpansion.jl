@@ -98,6 +98,7 @@ function scatter(
             return (leg_out, worm_out, vd.transition_targets[out])
         end
     end
+    return (-1, -1, VertexCode(nothing))
 end
 
 
