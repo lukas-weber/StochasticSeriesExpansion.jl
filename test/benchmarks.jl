@@ -15,3 +15,16 @@ function bench_vertex_list()
     vl = S.VertexList{2}(length(sse_data.sites))
     return () -> S.make_vertex_list!(vl, operators, sse_data.bonds)
 end
+
+function bench_total()
+    function bench()
+        mktempdir() do dir
+            job = generate_test_jobs(dir, 10000, 10000)["magnet_square"]
+
+            LoadLeveller.start(LoadLeveller.SingleRunner{job.mc}, job)
+        end
+        return nothing
+    end
+
+    return bench
+end
