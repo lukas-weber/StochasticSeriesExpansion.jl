@@ -50,7 +50,7 @@ end
             S.get_leg_state(
                 S.get_vertex_data(sse_data, S.get_bond(operators[vf[2]])),
                 S.get_vertex(operators[vf[2]]),
-            )[vf[1]] for vf in eachcol(vl.v_first)
+            )[vf[1]] for vf in vl.v_first
         ]
         @test isconsistent(operators, state0, sse_data)
     end

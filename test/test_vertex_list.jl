@@ -15,34 +15,16 @@
         S.OperCode(3, v),
     ]
 
-    expected = fill(-1, 2, leg_count, length(operators))
-    expected[:, :, 3] = [
-        3 3 1 2
-        7 6 5 5
-    ]
-    expected[:, :, 5] = [
-        3 4 1 1
-        3 3 7 6
-    ]
-    expected[:, :, 6] = [
-        4 4 2 2
-        5 7 3 7
-    ]
-    expected[:, :, 7] = [
-        3 4 1 2
-        5 6 3 6
-    ]
+    expected = fill((-1, -1), leg_count, length(operators))
+    expected[:, 3] = [(3, 7), (3, 6), (1, 5), (2, 5)]
+    expected[:, 5] = [(3, 3), (4, 3), (1, 7), (1, 6)]
+    expected[:, 6] = [(4, 5), (4, 7), (2, 3), (2, 7)]
+    expected[:, 7] = [(3, 5), (4, 6), (1, 3), (2, 6)]
 
     vl = S.VertexList{leg_count ÷ 2}(site_count)
     S.make_vertex_list!(vl, operators, bonds)
 
-    @test vl.v_last == [
-        3 3 4 -1
-        7 6 7 -1
-    ]
-    @test vl.v_first == [
-        1 2 2 -1
-        3 3 6 -1
-    ]
+    @test vl.v_last == [(3, 7), (3, 6), (4, 7), (-1, -1)]
+    @test vl.v_first == [(1, 3), (2, 3), (2, 6), (-1, -1)]
     @test vl.vertices == expected
 end

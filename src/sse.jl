@@ -210,7 +210,7 @@ function worm_update(mc::MC, ctx::LoadLeveller.MCContext)
     end
 
     for i in eachindex(mc.state)
-        (l, p) = mc.vertex_list.v_first[:, i]
+        (l, p) = mc.vertex_list.v_first[i]
         if p < 0
             mc.state[i] = rand(ctx.rng, 1:mc.sse_data.sites[i].dim)
         else
@@ -234,7 +234,7 @@ function worm_traverse!(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Model
     while true
         p0 = rand(ctx.rng, 1:length(mc.operators))
         l0 = rand(ctx.rng, 1:leg_count(Model))
-        if mc.vertex_list.vertices[1, l0, p0] > 0
+        if mc.vertex_list.vertices[l0, p0][1] > 0
             break
         end
     end
@@ -285,7 +285,7 @@ function worm_traverse!(
         worm_length += 1
 
         wormfunc = wormfunc_out
-        (leg_in, p) = vertices[:, leg_out, p]
+        (leg_in, p) = vertices[leg_out, p]
 
         if p == p0 && leg_in == l0 && wormfunc == wormfunc0
             break
