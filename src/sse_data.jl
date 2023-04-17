@@ -26,5 +26,5 @@ function SSEData(
     return SSEData(vertex_data, sites, bonds, energy_offset)
 end
 
-get_vertex_data(data::SSEData, bond_idx::Integer) =
-    data.vertex_data[data.bonds[bond_idx].type]
+@inline get_vertex_data(data::SSEData, bond_idx::Integer) =
+    @inbounds data.vertex_data[data.bonds[bond_idx].type]

@@ -43,11 +43,9 @@ function VertexData(
     (diagonal_vertices, weights, leg_states, signs) =
         construct_vertices(dims, bond_hamiltonian, energy_offset, tolerance)
 
-    @debug begin
-        @assert NSites >= 1
-        @assert total_dim == size(bond_hamiltonian, 1) == size(bond_hamiltonian, 2)
-        @assert size(leg_states) == (2 * NSites, length(weights))
-    end
+    @assert NSites >= 1
+    @assert total_dim == size(bond_hamiltonian, 1) == size(bond_hamiltonian, 2)
+    @assert size(leg_states) == (2 * NSites, length(weights))
 
     (transitions, transition_cumprobs, transition_targets, transition_step_outs) =
         construct_transitions(
@@ -91,13 +89,15 @@ function scatter(
 ) where {NSites}
     vi = get_vertex_idx(v)
 
-    t = vd.transitions[leg_in, worm_in, vi]
+    @inbounds t = vd.transitions[leg_in, worm_in, vi]
 
-    out =
-        findfirst(p -> random < p, @view vd.transition_cumprobs[t.offset:t.offset+t.length])
-    (leg_out, worm_out) = vd.transition_step_outs[t.offset+out-1]
+    @inbounds for out = t.offset:t.offset+t.length
+        if random < vd.transition_cumprobs[out]
+            (leg_out, worm_out) = vd.transition_step_outs[out]
 
-    return (leg_out, worm_out, vd.transition_targets[t.offset+out-1])
+            return (leg_out, worm_out, vd.transition_targets[out])
+        end
+    end
 end
 
 
