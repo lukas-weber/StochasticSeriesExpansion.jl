@@ -99,6 +99,8 @@ function LoadLeveller.read_checkpoint(mc::MC, in::HDF5.Group)
     return nothing
 end
 
+unsign(signobs::AbstractFloat, sign::AbstractFloat) = signobs / sign
+
 function LoadLeveller.register_evaluables(
     ::Type{<:MC{Model}},
     eval::LoadLeveller.Evaluator,
@@ -109,10 +111,7 @@ function LoadLeveller.register_evaluables(
 
     #register_evaluables(model, eval, params)
 
-    evaluate!(eval, :Energy, [:SignEnergy, :Sign]) do energy, sign
-        return energy / sign
-    end
-
+    evaluate!(unsign, eval, :Energy, [:SignEnergy, :Sign])
     evaluate!(
         eval,
         :SpecificHeat,
