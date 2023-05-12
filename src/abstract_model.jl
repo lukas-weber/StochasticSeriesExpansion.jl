@@ -1,19 +1,5 @@
 abstract type AbstractModel end
 
-macro stub(func::Expr)
-    return :(
-        $func = error(
-            "AbstractModel interface not implemented for Model type $(typeof(model))",
-        )
-    )
-end
-
-macro stubT(func::Expr)
-    return :(
-        $func = error("AbstractModel interface not implemented for Model type $(Model)")
-    )
-end
-
-@stubT leg_count(::Type{<:AbstractModel})
+@stubT leg_count(model::Type{<:AbstractModel})
 @stub generate_sse_data(model::AbstractModel)::SSEData
 @stub normalization_site_count(model::AbstractModel)
