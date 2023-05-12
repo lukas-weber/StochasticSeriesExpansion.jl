@@ -1,19 +1,15 @@
 using StaticArrays
 
 macro stub(func::Expr)
-    return :(
-        $func = error(
-            "$(func.args[2].args[2]) interface not implemented for type $(typeof(func.args[2].args[1]))",
-        )
-    )
+    funcname = string(func.args[1])
+    return :($func = (typename = string(typeof($(func.args[2].args[1])));
+    error($funcname * " interface not implemented for type " * typename)))
 end
 
 macro stubT(func::Expr)
-    return :(
-        $func = error(
-            "$(only(func.args[2].args[2].args[2].args)) interface not implemented for type $(func.args[2].args[1])",
-        )
-    )
+    funcname = string(only(func.args[2].args[2].args[2].args))
+    return :($func = (typename = string(typeof($(func.args[2].args[1])));
+    error($funcname * " interface not implemented for type " * typename)))
 end
 
 function split_idx(dims::NTuple{D,<:Integer}, idx::Integer) where {D}
