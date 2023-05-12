@@ -31,8 +31,12 @@ function generate_test_jobs(
     tm.Lx = 2
     tm.Ly = 4
 
+    tm.measure = [:magnetization]
+
     tm.J = 1.23
     tm.hz = -0.4
+
+    tm.ed_run = 1
 
     for T in Ts
         task(tm; T = T)

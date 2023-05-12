@@ -28,6 +28,7 @@ end
     params = Dict(
         :T => 0.1,
         :unitcell => S.UnitCells.square,
+        :measure => [],
         :Lx => 4,
         :Ly => 4,
         :J => 1.0,
@@ -62,6 +63,7 @@ end
     params = Dict(
         :T => 0.1,
         :unitcell => S.UnitCells.honeycomb,
+        :measure => [],
         :Lx => 4,
         :Ly => 4,
         :J => 1.4,

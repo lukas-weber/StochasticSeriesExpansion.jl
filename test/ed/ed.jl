@@ -39,23 +39,6 @@ function heisen_bond(l::Lifter, posi::Integer, posj::Integer)
 end
 
 
-function hamiltonian(magnet::S.Models.Magnet)
-    dims = [Int(site.spin_mag * 2 + 1) for site in magnet.site_params]
-
-    lifter = Lifter(dims)
-    H = spzeros(prod(dims), prod(dims))
-    for (bond, params) in zip(magnet.lattice.bonds, magnet.bond_params)
-        H +=
-            params.J * heisen_bond(lifter, bond.i, bond.j) +
-            params.d * spin(lifter, bond.i, 3) * spin(lifter, bond.j, 3) +
-            params.hz * (spin(lifter, bond.i, 3) + spin(lifter, bond.j, 3))
-        +params.Dx * (spin(lifter, bond.i, 1)^2 + spin(lifter, bond.j, 1)^2) +
-        params.Dz * (spin(lifter, bond.i, 1)^2 + spin(lifter, bond.j, 3)^2)
-    end
-
-    return H
-end
-
 
 struct Ensemble{F,CF}
     Ts::Vector{F}
@@ -79,14 +62,14 @@ function mean(en::Ensemble{F}, A::AbstractMatrix) where {F}
         res += en.psi[:, i]' * A * en.psi[:, i] * en.ρ[i, :]
     end
 
-    if all(imag.(res) ≈ 0)
+    if all(imag.(res) .≈ 0.0)
         return real.(res)
     end
     return res
 end
 
 function diag_mean(en::Ensemble, Adiag::AbstractVector)
-    return sum(Adiag .* en.ρ, dims = 1)
+    return vec(sum(Adiag .* en.ρ, dims = 1))
 end
 
 @struct_equal S.Models.Magnet
@@ -99,12 +82,12 @@ function summarize_tasks(job::JobInfo)
         params = deepcopy(task.params)
         T = pop!(params, :T)
 
-        existing = findfirst(t -> t[2] == params, summarized_tasks)
+        existing = findfirst(t -> t[3][:ed_run] == params[:ed_run], summarized_tasks)
         if existing === nothing
             push!(summarized_tasks, ([task.name], [T], params))
         else
-            push!(summarized_task[1], task.name)
-            push!(summarized_task[2], T)
+            push!(summarized_tasks[existing][1], task.name)
+            push!(summarized_tasks[existing][2], T)
         end
     end
 
@@ -115,7 +98,7 @@ end
 function run_ed(::Type{Model}, job::JobInfo) where {Model}
     results = Dict{Symbol,Any}[]
 
-    obsnames = [:Energy]
+    obsnames = Set{Symbol}()
 
     for (names, Ts, params) in summarize_tasks(job)
         model = Model(params)
@@ -128,7 +111,9 @@ function run_ed(::Type{Model}, job::JobInfo) where {Model}
         Emean = diag_mean(ensemble, Es) / S.normalization_site_count(model)
 
         obs = Dict(:Energy => Emean)
+        calc_observables!(obs, model, ensemble)
 
+        union!(obsnames, keys(obs))
         for (i, T) in enumerate(Ts)
             push!(
                 results,
@@ -141,5 +126,5 @@ function run_ed(::Type{Model}, job::JobInfo) where {Model}
         end
     end
 
-    return obsnames, DataFrame(results)
+    return collect(obsnames), DataFrame(results)
 end
