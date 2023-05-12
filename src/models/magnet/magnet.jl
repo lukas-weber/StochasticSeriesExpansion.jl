@@ -95,7 +95,7 @@ function Magnet(params::AbstractDict{Symbol,<:Any})
     return Magnet(lat, full_bond_params, full_site_params)
 end
 
-function magnetization_state(mag::Magnet, site_idx::Integer, state_idx::Integer)
+function S.magnetization_state(mag::Magnet, site_idx::Integer, state_idx::Integer)
     return mag.site_params[site_idx].spin_mag - state_idx + 1
 end
 
@@ -140,6 +140,18 @@ function S.generate_sse_data(mag::Magnet)
     bonds = [S.Bond(bond.type, (bond.i, bond.j)) for bond in mag.lattice.bonds]
 
     return S.SSEData(vertex_data, sites, bonds)
+end
+
+function S.get_opstring_estimators(mag::Magnet, params::AbstractDict)
+    ests = Type[]
+    for est in params[:measure]
+        if est == :magnetization
+            q = ntuple(i -> 0, S.dimension(mag.lattice))
+            push!(ests, S.MagnetizationEstimator{q,false,Magnet,Symbol()})
+        end
+    end
+
+    return ests
 end
 
 end

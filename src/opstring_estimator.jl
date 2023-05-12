@@ -1,13 +1,13 @@
 using LoadLeveller
 
-abstract type AbstractOpstringOpstringEstimator end
+abstract type AbstractOpstringEstimator end
 
-@stub init(est::AbstractOpstringEstimator, state::AbstractOpstringVector{<:StateIdx})
+@stub init(est::AbstractOpstringEstimator, state::AbstractVector{<:StateIdx})
 
 @stub measure(
     est::AbstractOpstringEstimator,
     op::OperCode,
-    state::AbstractOpstringVector{<:StateIdx},
+    state::AbstractVector{<:StateIdx},
     sse_data::SSEData,
 )
 

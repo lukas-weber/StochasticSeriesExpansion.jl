@@ -9,6 +9,7 @@ end
 
 Base.@kwdef mutable struct MC{Model<:AbstractModel,NSites} <: LoadLeveller.AbstractMC
     T::Float64 = 0.0
+    opstring_estimators::Vector{Type}
 
     target_worm_length_fraction::Float64
     avg_worm_length::Float64 = 1.0
@@ -30,6 +31,7 @@ function MC{Model,NSites}(params::AbstractDict) where {Model,NSites}
     sse_data = generate_sse_data(model)
     return MC{Model,NSites}(
         vertex_list = VertexList{leg_count(Model) ÷ 2}(length(sse_data.sites)),
+        opstring_estimators = get_opstring_estimators(model, params),
         operators = OperCode[],
         state = StateIdx[],
         T = params[:T],
@@ -65,16 +67,18 @@ end
 function LoadLeveller.measure!(mc::MC, ctx::LoadLeveller.MCContext)
     sign = measure_sign(mc.operators, mc.sse_data)
 
-    measure!(ctx, :Sign, sign)
-    measure!(ctx, :OperatorCount, mc.num_operators)
-    measure!(ctx, :SignOperatorCount, sign * mc.num_operators)
-    measure!(ctx, :SignOperatorCount2, sign * Float64(mc.num_operators)^2)
+    measure!(ctx, :Sign, float(sign))
+    measure!(ctx, :OperatorCount, float(mc.num_operators))
+    measure!(ctx, :SignOperatorCount, float(sign * mc.num_operators))
+    measure!(ctx, :SignOperatorCount2, sign * float(mc.num_operators)^2)
     measure!(
         ctx,
         :SignEnergy,
         -sign * (mc.num_operators * mc.T + mc.sse_data.energy_offset) /
         normalization_site_count(mc.model),
     )
+
+    measure_opstring!(mc, ctx, (est(mc.model) for est in mc.opstring_estimators)...)
 
     return nothing
 end
@@ -99,7 +103,7 @@ function LoadLeveller.read_checkpoint(mc::MC, in::HDF5.Group)
     return nothing
 end
 
-unsign(signobs::AbstractFloat, sign::AbstractFloat) = signobs / sign
+unsign(signobs, sign) = signobs ./ sign
 
 function LoadLeveller.register_evaluables(
     ::Type{<:MC{Model}},
@@ -305,10 +309,10 @@ function measure_sign(operators::AbstractVector{<:OperCode}, data::SSEData)
     return Bool(sign & 1) ? -1 : 1
 end
 
-function measure_opstring(
+function measure_opstring!(
     mc::MC{Model},
     ctx::MCContext,
-    estimators::AbstractEstimator...,
+    estimators::AbstractOpstringEstimator...,
 ) where {Model}
     for estimator in estimators
         init!(estimator, mc.state)
@@ -323,11 +327,15 @@ function measure_opstring(
 
         if !isdiagonal(op)
             b = mc.sse_data.bonds[get_bond(op)]
-            vd = get_vertex_data(get_bond(op))
+            vd = get_vertex_data(mc.sse_data, get_bond(op))
 
-            leg_state = @view vd.leg_states[:, get_vertex(op)]
+            leg_state = get_leg_state(vd, get_vertex(op))
+            @show leg_state
+            @show mc.state
 
-            mc.state[b.sites...] .= leg_state[leg_count(Model)÷2:end]
+            for (i, s) in enumerate(b.sites)
+                mc.state[s] = leg_state[leg_count(Model)÷2+i]
+            end
         end
 
         if (n < mc.num_operators)
@@ -342,6 +350,8 @@ function measure_opstring(
     for estimator in estimators
         result(estimator, ctx)
     end
+
+    return nothing
 end
 
 function print_opstring(operators::AbstractVector{<:OperCode}, data::SSEData)
@@ -352,4 +362,6 @@ function print_opstring(operators::AbstractVector{<:OperCode}, data::SSEData)
             )
         end
     end
+
+    return nothing
 end

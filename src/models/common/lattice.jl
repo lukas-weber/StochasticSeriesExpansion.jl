@@ -96,6 +96,9 @@ struct Lattice{D,F}
     bonds::Vector{LatticeBond}
 end
 
+dimension(lat::Lattice{D}) where {D} = D
+dimension(unitcell::UnitCell{D}) where {D} = D
+
 function Lattice(uc::UnitCell{D,F}, Ls::NTuple{D,<:Integer}) where {D,F}
     dims = (length(uc.sites), Ls...)
     bonds = LatticeBond[]

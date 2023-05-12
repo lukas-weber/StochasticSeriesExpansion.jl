@@ -1,5 +1,7 @@
-"""Generic OpstringEstimator that can be used for all models that have (i) a fielt `lattice::Lattice` and (ii) implement [`magnetization_state(::Model, state_idx)`](@ref). OrderingVector is the Fourier component to compute in units of π. For example ``(1,1,0)`` corresponds to ``(π,π,0)``"""
-Base.@kwdef mutable struct MagnetizationEstimator{
+"""Generic OpstringEstimator that can be used for all models that have (i) a field `lattice::Lattice` and (ii) implement [`magnetization_state(::Model, state_idx)`](@ref).
+
+`OrderingVector` is the Fourier component to compute in units of π. For example ``(1,1)`` corresponds to ``(π,π)``. If `StaggerUC` is true, the sublattice sign of the unitcell is additionally taken into account."""
+mutable struct MagnetizationEstimator{
     OrderingVector,
     StaggerUC,
     Model<:AbstractModel,
@@ -7,23 +9,43 @@ Base.@kwdef mutable struct MagnetizationEstimator{
 } <: AbstractOpstringEstimator
     model::Model
 
-    n::Float64 = 1.0
+    n::Float64
 
-    tmpmag::Float64 = 0.0
-    mag::Float64 = 0.0
-    absmag::Float64 = 0.0
-    mag2::Float64 = 0.0
-    mag4::Float64 = 0.0
+    tmpmag::Float64
+    mag::Float64
+    absmag::Float64
+    mag2::Float64
+    mag4::Float64
+end
+
+# Model extension interface:
+@stub magnetization_state(model::AbstractModel, site_idx::Integer, state_idx::Integer)
+
+"""In models where additional degrees of freedom exist, this function maps sse site indices to physical lattice site indices"""
+magnetization_lattice_site_idx(::AbstractModel, sse_site_idx::Integer) = sse_site_idx
+
+function MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix}(
+    model::Model,
+) where {OrderingVector,StaggerUC,Model,Prefix}
+    return MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix}(
+        model,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    )
 end
 
 function stag_sign(
     est::MagnetizationEstimator{OrderingVector,StaggerUC},
     site_idx::Integer,
 ) where {OrderingVector,StaggerUC}
-    iuc, ix = split_idx(est.model.lat)
+    iuc, ix = split_idx(est.model.lattice, site_idx)
 
-    sign = StaggerUC ? model.lattice.unitcell.sites[iuc].sublattice_sign : 1
-    sign *= (-1)^(OrderingVector .* ix)
+    sign = StaggerUC ? est.model.lattice.unitcell.sites[iuc].sublattice_sign : 1
+    sign *= (-1)^sum(OrderingVector .* ix)
 
     return sign
 end
@@ -43,10 +65,10 @@ function init!(est::MagnetizationEstimator, state::AbstractVector)
     return nothing
 end
 
-function measure!(
+function measure(
     est::MagnetizationEstimator,
     op::OperCode,
-    state::AbstractVector,
+    ::AbstractVector{<:UInt8},
     sse_data::SSEData,
 )
     if !isdiagonal(op)
@@ -56,12 +78,12 @@ function measure!(
 
         nsites = length(vd.dims)
         for l = 1:nsites
-            site = get_lattice_site_idx(est.model, bond.sites[l])
+            site = magnetization_lattice_site_idx(est.model, bond.sites[l])
             if site !== nothing
                 est.tmpmag +=
-                    stag_sign(site) * (
+                    stag_sign(est, site) * (
                         magnetization_state(est.model, site, leg_state[nsites+l]) -
-                        magnetization_state(est.model, site, leg_states[l])
+                        magnetization_state(est.model, site, leg_state[l])
                     )
             end
         end
