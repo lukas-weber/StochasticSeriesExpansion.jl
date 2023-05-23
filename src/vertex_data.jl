@@ -248,6 +248,7 @@ function construct_transitions(
 
     optimizer = HiGHS.Optimizer()
 
+    MOI.set(optimizer, MOI.Silent(), true)
     x = MOI.add_variables(optimizer, length(variables))
     MOI.set(
         optimizer,
@@ -265,7 +266,6 @@ function construct_transitions(
         MOI.RawOptimizerAttribute("dual_feasibility_tolerance"),
         lp_tolerance,
     )
-    MOI.set(optimizer, MOI.Silent(), true)
 
     for xi in x
         MOI.add_constraint(optimizer, xi, MOI.GreaterThan(0.0))
