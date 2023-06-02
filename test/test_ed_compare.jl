@@ -26,10 +26,15 @@ end
                 mc_data = run_mc(job)
 
                 for obsname in obsnames
-                    z = stdscore.(mc_data[!, obsname], ed_data[!, obsname])
+                    # hack for the case that the error is exactly zero
+                    mc_data_nudge = [m.val ± (m.err != 0 ? m.err : 1e-9) for m in mc_data[!, obsname]]
+                    
+                    z = stdscore.(mc_data_nudge, ed_data[!, obsname])
                     p = pvalue(ExactOneSampleKSTest(z, Normal()))
                     if p <= 1e-3
                         println("$obsname: p = $p")
+                        println("MC: $(mc_data_nudge)\nED:$(ed_data[!,obsname])")
+                        gui(plot(ed_data[!,:T], [mc_data_nudge, ed_data[!,obsname]]))
                     end
 
                     @test p > 1e-3

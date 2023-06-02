@@ -99,7 +99,7 @@ function measure(
     return nothing
 end
 
-function get_prefix(est::MagnetizationEstimator{G,S,M,Prefix}) where {G,S,M,Prefix}
+function get_prefix(::Type{MagnetizationEstimator{G,S,M,Prefix}}) where {G,S,M,Prefix}
     return Prefix
 end
 
@@ -109,7 +109,7 @@ function result(
     T::AbstractFloat,
     sign::AbstractFloat,
 )
-    prefix = "Sign$(get_prefix(est))"
+    prefix = "Sign$(get_prefix(typeof(est)))"
 
     norm = 1 / normalization_site_count(est.model)
     est.mag *= norm
@@ -131,7 +131,7 @@ function result(
     return nothing
 end
 
-function register_evaluables(est::MagnetizationEstimator, eval::LoadLeveller.Evaluator)
+function register_evaluables(est::Type{<:MagnetizationEstimator}, eval::LoadLeveller.Evaluator)
     prefix = get_prefix(est)
 
     evaluate!(unsign, eval, Symbol("$(prefix)Mag"), [Symbol("Sign$(prefix)Mag"), :Sign])
@@ -152,9 +152,12 @@ function register_evaluables(est::MagnetizationEstimator, eval::LoadLeveller.Eva
 
     evaluate!(
         eval,
-        "$(prefix)BinderRatio",
+        Symbol("$(prefix)BinderRatio"),
         [Symbol("Sign$(prefix)Mag4"), Symbol("Sign$(prefix)Mag2"), :Sign],
     ) do smag4, smag2, sign
+        if smag2 == smag4 == 0
+            return zero(smag2)
+        end
         return smag2^2 / smag4 / sign
     end
 

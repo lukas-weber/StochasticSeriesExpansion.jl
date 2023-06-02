@@ -78,7 +78,7 @@ function LoadLeveller.measure!(mc::MC, ctx::LoadLeveller.MCContext)
         normalization_site_count(mc.model),
     )
 
-    measure_opstring!(mc, ctx, (est(mc.model) for est in mc.opstring_estimators)...)
+    measure_opstring!(mc, ctx, sign, (est(mc.model) for est in mc.opstring_estimators)...)
 
     return nothing
 end
@@ -112,6 +112,10 @@ function LoadLeveller.register_evaluables(
 ) where {Model}
 
     model = Model(params)
+
+    for estimator in get_opstring_estimators(model, params)
+        register_evaluables(estimator, eval)
+    end
 
     #register_evaluables(model, eval, params)
 
@@ -190,9 +194,9 @@ function diagonal_update(
     end
 end
 
-function worm_update(mc::MC, ctx::LoadLeveller.MCContext)
+function worm_update(mc::MC, ctx::MCContext)
     total_worm_length = 1.0
-    for i = 1:ceil(Int, mc.num_worms)
+    for _ = 1:ceil(Int, mc.num_worms)
         worm_length = worm_traverse!(mc, ctx)
         total_worm_length += worm_length
     end
@@ -306,12 +310,13 @@ function measure_sign(operators::AbstractVector{<:OperCode}, data::SSEData)
         end
     end
 
-    return Bool(sign & 1) ? -1 : 1
+    return Bool(sign & 1) ? -1.0 : 1.0
 end
 
 function measure_opstring!(
     mc::MC{Model},
     ctx::MCContext,
+    sign::AbstractFloat,
     estimators::AbstractOpstringEstimator...,
 ) where {Model}
     for estimator in estimators
@@ -330,8 +335,6 @@ function measure_opstring!(
             vd = get_vertex_data(mc.sse_data, get_bond(op))
 
             leg_state = get_leg_state(vd, get_vertex(op))
-            @show leg_state
-            @show mc.state
 
             for (i, s) in enumerate(b.sites)
                 mc.state[s] = leg_state[leg_count(Model)÷2+i]
@@ -348,7 +351,7 @@ function measure_opstring!(
     end
 
     for estimator in estimators
-        result(estimator, ctx)
+        result(estimator, ctx, mc.T, sign)
     end
 
     return nothing

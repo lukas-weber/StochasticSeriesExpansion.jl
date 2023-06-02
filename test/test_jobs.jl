@@ -34,7 +34,7 @@ function generate_test_jobs(
     tm.measure = [:magnetization]
 
     tm.J = 1.23
-    tm.hz = -0.4
+    #tm.hz = -0.4
 
     tm.ed_run = 1
 

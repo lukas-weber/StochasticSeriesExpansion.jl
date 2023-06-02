@@ -3,7 +3,7 @@ function make_operator(func, magnet::S.Models.Magnet)
 
     lifter = Lifter(dims)
     op = spzeros(prod(dims), prod(dims))
-    func(op, lifter)
+    op = func(op, lifter)
     return op
 end
 
@@ -17,7 +17,7 @@ function hamiltonian(magnet::S.Models.Magnet)
             +params.Dx * (spin(lifter, bond.i, 1)^2 + spin(lifter, bond.j, 1)^2) +
             params.Dz * (spin(lifter, bond.i, 1)^2 + spin(lifter, bond.j, 3)^2)
         end
-        return nothing
+        return H
     end
 end
 
@@ -31,12 +31,14 @@ function calc_observables!(
         for i in eachindex(magnet.site_params)
             M += spin(lifter, i, 3)
         end
-    end
+        return M
+    end./S.normalization_site_count(magnet)
 
     obs[:Mag] = mean(ens, M)
     obs[:Mag2] = mean(ens, M^2)
     obs[:Mag4] = mean(ens, M^4)
     obs[:AbsMag] = mean(ens, abs.(M))
 
-    obs[:BinderRatio] = obs[:Mag4] ./ obs[:Mag2] .^ 2
+    
+    obs[:BinderRatio] = ((m4, m2)-> m4==m2==0 ? zero(m2) : m4/m2^2).(obs[:Mag4], obs[:Mag2])
 end

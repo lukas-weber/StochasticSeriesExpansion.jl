@@ -11,4 +11,5 @@ abstract type AbstractOpstringEstimator end
     sse_data::SSEData,
 )
 
-@stub result(est::AbstractOpstringEstimator, ctx::MCContext)
+@stub result(est::AbstractOpstringEstimator, ctx::MCContext, T::AbstractFloat, Sign::AbstractFloat)
+@stubT register_evaluables(est::Type{<:AbstractOpstringEstimator}, eval::LoadLeveller.Evaluator)
