@@ -36,9 +36,9 @@ function calc_observables!(
 
     obs[:Mag] = mean(ens, M)
     obs[:Mag2] = mean(ens, M^2)
+
     obs[:Mag4] = mean(ens, M^4)
     obs[:AbsMag] = mean(ens, abs.(M))
 
-    
-    obs[:BinderRatio] = ((m4, m2)-> m4==m2==0 ? zero(m2) : m4/m2^2).(obs[:Mag4], obs[:Mag2])
+    obs[:BinderRatio] = obs[:Mag2] .^ 2 ./ obs[:Mag4]
 end
