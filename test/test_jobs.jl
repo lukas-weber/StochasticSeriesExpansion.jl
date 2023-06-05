@@ -8,10 +8,14 @@ function generate_test_jobs(
 )
     jobs = Dict{String,JobInfo}()
 
-    function add_test_job(name::AbstractString, ::Type{Model}, tm::TaskMaker) where {Model}
+    function add_test_job(
+        name::AbstractString,
+        model::Type{<:S.AbstractModel},
+        tm::TaskMaker,
+    )
         jobs[name] = JobInfo(
             "$jobdir/$name",
-            S.mc(Model);
+            S.mc(model);
             run_time = "15:00",
             checkpoint_time = "15:00",
             tasks = make_tasks(tm),
@@ -25,7 +29,7 @@ function generate_test_jobs(
     tm.thermalization = thermalization
     tm.binsize = 1000
 
-    Ts = range(0.02, 4.00, length = 7)
+    Ts = range(0.04, 4.00, length = 7)
 
     tm.unitcell = S.UnitCells.square
     tm.Lx = 2

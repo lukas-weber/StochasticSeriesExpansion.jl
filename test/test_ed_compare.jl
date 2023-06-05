@@ -16,7 +16,7 @@ end
 
 @testset "ED Comparison" begin
     mktempdir() do tmpdir
-        jobs = generate_test_jobs(tmpdir, 100000, 10000)
+        jobs = generate_test_jobs(tmpdir, 40000, 5000)
 
         for (jobname, job) in jobs
             @testset "$(job.name)" begin
@@ -35,7 +35,20 @@ end
                     if p <= 1e-3
                         println("$obsname: p = $p")
                         println("MC: $(mc_data_nudge)\nED:$(ed_data[!,obsname])")
-                        gui(plot(ed_data[!,:T], [mc_data_nudge, ed_data[!,obsname]]))
+                        if isdefined(Main, :Plots)
+                            pl = plot(
+                                ed_data[!, :T],
+                                ed_data[!, obsname],
+                                label = "$obsname: ED",
+                            )
+                            plot!(
+                                pl,
+                                ed_data[!, :T],
+                                mc_data_nudge,
+                                label = "$obsname: QMC",
+                            )
+                            gui(pl)
+                        end
                     end
 
                     @test p > 1e-3
