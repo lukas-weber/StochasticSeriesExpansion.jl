@@ -1,6 +1,32 @@
 using LoadLeveller
 using LoadLeveller.JobTools
 
+function testjob_magnet_square(sweeps::Integer, thermalization::Integer)
+    tm = TaskMaker()
+    tm.sweeps = sweeps
+    tm.thermalization = thermalization
+    tm.binsize = 1000
+
+    Ts = range(0.04, 4.00, length = 7)
+
+    tm.unitcell = S.UnitCells.square
+    tm.Lx = 2
+    tm.Ly = 4
+
+    tm.measure = [:magnetization, :staggered_magnetization]
+
+    tm.J = 1.23
+    tm.hz = -0.2
+
+    tm.ed_run = 1
+
+    for T in Ts
+        task(tm; T = T)
+    end
+
+    return tm
+end
+
 function generate_test_jobs(
     jobdir::AbstractString,
     sweeps::Integer,
@@ -24,29 +50,11 @@ function generate_test_jobs(
         return nothing
     end
 
-    tm = TaskMaker()
-    tm.sweeps = sweeps
-    tm.thermalization = thermalization
-    tm.binsize = 1000
-
-    Ts = range(0.04, 4.00, length = 7)
-
-    tm.unitcell = S.UnitCells.square
-    tm.Lx = 2
-    tm.Ly = 4
-
-    tm.measure = [:magnetization]
-
-    tm.J = 1.23
-    #tm.hz = -0.4
-
-    tm.ed_run = 1
-
-    for T in Ts
-        task(tm; T = T)
-    end
-
-    add_test_job("magnet_square", S.Models.Magnet, tm)
+    add_test_job(
+        "magnet_square",
+        S.Models.Magnet,
+        testjob_magnet_square(sweeps, thermalization),
+    )
 
     return jobs
 end
