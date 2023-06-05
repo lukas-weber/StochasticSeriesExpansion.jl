@@ -148,6 +148,15 @@ function S.get_opstring_estimators(mag::Magnet, params::AbstractDict)
         if est == :magnetization
             q = ntuple(i -> 0, S.dimension(mag.lattice))
             push!(ests, S.MagnetizationEstimator{q,false,Magnet,Symbol()})
+        elseif est == :staggered_magnetization
+            neel = S.neel_vector(mag.lattice.uc)
+            if neel === nothing
+                error(
+                    "selected :staggered_magnetization measurement, but lattice does not have a Neel vector.",
+                )
+            end
+            q, stagger_uc = neel
+            push!(ests, S.MagnetizationEstimator{q,stagger_uc,Magnet,:Stag})
         end
     end
 
