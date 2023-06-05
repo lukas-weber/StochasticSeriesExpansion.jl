@@ -81,6 +81,24 @@ function UnitCell(
     )
 end
 
+function neel_vector(uc::UnitCell{D})::Union{Nothing,Tuple{NTuple{D,Bool},Bool}} where {D}
+    for stagger_uc in (false, true)
+        for q in Iterators.product(((false, true) for _ = 1:D)...)
+            if all(uc.bonds) do bond
+                signi = uc.sites[bond.iuc].sublattice_sign^stagger_uc
+                signj =
+                    uc.sites[bond.juc].sublattice_sign^stagger_uc * (-1)^(sum(bond.jd .* q))
+
+                return signi != signj
+            end
+                return q, stagger_uc
+            end
+        end
+    end
+
+    return nothing
+end
+
 struct LatticeBond
     type::Int
     i::Int
@@ -141,6 +159,7 @@ const square = UnitCell(
     [UCSite((0.0, 0.0))],
     [UCBond(1, (0, 1), 1), UCBond(1, (1, 0), 1)],
 )
+
 const columnar_dimer = UnitCell(
     [1.0 0.0; 0.0 2.0],
     [UCSite((0.0, 0.0)), UCSite((0.0, 0.5))],
@@ -158,4 +177,9 @@ const honeycomb = UnitCell(
     [UCBond(1, (0, 0), 2), UCBond(2, (0, 1), 1), UCBond(2, (1, 0), 1)],
 )
 
+const triangle = UnitCell(
+    [[1.0, 0.0] [-0.5, sqrt(3 / 2)]],
+    [UCSite((0.0, 0.0))],
+    [UCBond(1, (0, 1), 1), UCBond(1, (1, 0), 1), UCBond(1, (1, 1), 1)],
+)
 end
