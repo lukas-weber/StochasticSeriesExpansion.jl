@@ -58,8 +58,8 @@ end
 
 function mean(en::Ensemble{F}, A::AbstractMatrix) where {F}
     res = zeros(Complex{F}, length(en.Ts))
-    for i in size(en.psi, 2)
-        res += en.psi[:, i]' * A * en.psi[:, i] * en.ρ[i, :]
+    for i = 1:size(en.psi, 2)
+        res += (en.psi[:, i]' * A * en.psi[:, i]) * en.ρ[i, :]
     end
 
     if all(imag.(res) .≈ 0.0)
