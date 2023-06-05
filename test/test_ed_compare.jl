@@ -27,8 +27,9 @@ end
 
                 for obsname in obsnames
                     # hack for the case that the error is exactly zero
-                    mc_data_nudge = [m.val ± (m.err != 0 ? m.err : 1e-9) for m in mc_data[!, obsname]]
-                    
+                    mc_data_nudge =
+                        [m.val ± (m.err != 0 ? m.err : 1e-9) for m in mc_data[!, obsname]]
+
                     z = stdscore.(mc_data_nudge, ed_data[!, obsname])
                     p = pvalue(ExactOneSampleKSTest(z, Normal()))
                     if p <= 1e-3

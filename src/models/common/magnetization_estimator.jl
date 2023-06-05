@@ -131,7 +131,10 @@ function result(
     return nothing
 end
 
-function register_evaluables(est::Type{<:MagnetizationEstimator}, eval::LoadLeveller.Evaluator)
+function register_evaluables(
+    est::Type{<:MagnetizationEstimator},
+    eval::LoadLeveller.Evaluator,
+)
     prefix = get_prefix(est)
 
     evaluate!(unsign, eval, Symbol("$(prefix)Mag"), [Symbol("Sign$(prefix)Mag"), :Sign])

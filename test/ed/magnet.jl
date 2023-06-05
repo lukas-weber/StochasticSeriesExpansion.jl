@@ -32,7 +32,7 @@ function calc_observables!(
             M += spin(lifter, i, 3)
         end
         return M
-    end./S.normalization_site_count(magnet)
+    end ./ S.normalization_site_count(magnet)
 
     obs[:Mag] = mean(ens, M)
     obs[:Mag2] = mean(ens, M^2)

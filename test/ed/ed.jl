@@ -111,6 +111,7 @@ function run_ed(::Type{Model}, job::JobInfo) where {Model}
         Emean = diag_mean(ensemble, Es) / S.normalization_site_count(model)
 
         obs = Dict(:Energy => Emean)
+
         calc_observables!(obs, model, ensemble)
 
         union!(obsnames, keys(obs))
