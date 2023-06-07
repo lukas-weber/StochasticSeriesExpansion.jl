@@ -72,6 +72,32 @@ function diag_mean(en::Ensemble, Adiag::AbstractVector)
     return vec(sum(Adiag .* en.ρ, dims = 1))
 end
 
+"""
+    integrated_correlator(ens, A, B)
+
+Compute the integrated correlation function
+
+```math
+\\int^\\beta_0 d\\tau \\langle A(\\tau) B\\rangle.
+```
+"""
+function integrated_correlator(
+    ens::Ensemble{F},
+    A::AbstractMatrix,
+    B::AbstractMatrix,
+) where {F}
+    Anm = ens.psi' * A * ens.psi
+    Bnm = ens.psi' * B * ens.psi
+
+    return [
+        sum(
+            2ens.ρ[n, i] / (ens.Es[n] == ens.Es[m] ? 2T : ens.Es[m] - ens.Es[n]) *
+            Anm[n, m] *
+            Bnm[m, n] for n in eachindex(ens.Es), m in eachindex(ens.Es)
+        ) for (i, T) in enumerate(ens.Ts)
+    ]
+end
+
 @struct_equal S.Models.Magnet
 
 function summarize_tasks(job::JobInfo)

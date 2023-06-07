@@ -28,7 +28,7 @@ function calc_magnetization!(
     ens::Ensemble;
     ordering_vector::Tuple,
     stagger_uc::Bool,
-    prefix::AbstractString,
+    prefix::Symbol,
 )
 
     M =
@@ -41,14 +41,18 @@ function calc_magnetization!(
             return M
         end ./ S.normalization_site_count(magnet)
 
-    obs[Symbol(prefix * "Mag")] = mean(ens, M)
+    symbols, _ = S.magest_obs_symbols(prefix)
+
+    obs[symbols.mag] = mean(ens, M)
     m2 = mean(ens, M^2)
     m4 = mean(ens, M^4)
-    obs[Symbol(prefix * "Mag2")] = m2
-    obs[Symbol(prefix * "Mag4")] = m4
-    obs[Symbol(prefix * "AbsMag")] = mean(ens, abs.(M))
+    obs[symbols.mag2] = m2
+    obs[symbols.mag4] = m4
+    obs[symbols.absmag] = mean(ens, abs.(M))
 
-    obs[Symbol(prefix * "BinderRatio")] = m2 .^ 2 ./ m4
+    obs[symbols.binderratio] = m2 .^ 2 ./ m4
+    obs[symbols.magchi] =
+        integrated_correlator(ens, M, M) * S.normalization_site_count(magnet)
 end
 
 function calc_observables!(
@@ -64,7 +68,7 @@ function calc_observables!(
                 ens;
                 ordering_vector = q,
                 stagger_uc = stagger_uc,
-                prefix = String(S.magest_standard_prefix(q, stagger_uc)),
+                prefix = S.magest_standard_prefix(q, stagger_uc),
             )
         end
     end
