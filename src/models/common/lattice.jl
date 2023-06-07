@@ -6,18 +6,18 @@ struct UCBond{D}
     juc::Int
 end
 
-struct UCSite{D,F<:Real}
-    pos::SVector{D,F}
+struct UCSite{D}
+    pos::SVector{D,Float64}
     sublattice_sign::Int
     coordination::Int # filled automatically
 end
 
 UCSite(pos::Tuple) = UCSite(SVector(pos), 0, 0)
 
-struct UnitCell{D,F}
-    lattice_vectors::SMatrix{D,D,F} # as columns
+struct UnitCell{D}
+    lattice_vectors::SMatrix{D,D,Float64} # as columns
 
-    sites::Vector{UCSite{D,F}}
+    sites::Vector{UCSite{D}}
     bonds::Vector{UCBond{D}}
 end
 
@@ -64,9 +64,9 @@ end
 
 function UnitCell(
     lattice_vectors::AbstractMatrix,
-    sites::Vector{<:UCSite{D,F}},
+    sites::Vector{<:UCSite{D}},
     bonds::Vector{<:UCBond{D}},
-) where {D,F}
+) where {D}
 
     signs = calculate_uc_signs(bonds, length(sites))
     coordinations = calculate_uc_coordinations(bonds, length(sites))
@@ -107,8 +107,8 @@ end
 
 convert(::Type{Bond{2}}, lb::LatticeBond) = Bond(lb.type, (lb.i, lb.j))
 
-struct Lattice{D,F}
-    uc::UnitCell{D,F}
+struct Lattice{D}
+    uc::UnitCell{D}
     Ls::NTuple{D,Int}
 
     bonds::Vector{LatticeBond}
@@ -117,7 +117,7 @@ end
 dimension(lat::Lattice{D}) where {D} = D
 dimension(unitcell::UnitCell{D}) where {D} = D
 
-function Lattice(uc::UnitCell{D,F}, Ls::NTuple{D,<:Integer}) where {D,F}
+function Lattice(uc::UnitCell{D}, Ls::NTuple{D,<:Integer}) where {D}
     dims = (length(uc.sites), Ls...)
     bonds = LatticeBond[]
     for r in Iterators.product([1:L for L in Ls]...)
@@ -130,9 +130,12 @@ function Lattice(uc::UnitCell{D,F}, Ls::NTuple{D,<:Integer}) where {D,F}
 
             push!(bonds, LatticeBond(bond_type, i, j))
         end
+        for (iuc, uc_site) in enumerate(uc.sites)
+            push!(sites, LatticeSite(iuc, r))
+        end
     end
 
-    return Lattice{D,F}(uc, Ls, bonds)
+    return Lattice{D}(uc, Ls, bonds, sites)
 end
 
 function split_idx(l::Lattice, site_idx::Integer)
