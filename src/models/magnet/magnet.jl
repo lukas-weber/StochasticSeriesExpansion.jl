@@ -14,7 +14,7 @@ struct MagnetBondParams{F<:AbstractFloat}
 end
 
 struct MagnetSiteParams
-    spin_mag::Rational
+    spin_states::Int8
 end
 
 
@@ -86,7 +86,7 @@ function Magnet(params::AbstractDict{Symbol,<:Any})
 
     full_site_params = repeat(
         [
-            MagnetSiteParams(get(params, pm(:sites, i, :S), 1 // 2)) for
+            MagnetSiteParams(get(params, pm(:sites, i, :S), 1 // 2) * 2 + 1) for
             i in eachindex(lat.uc.sites)
         ],
         prod(lat.Ls),
@@ -96,14 +96,14 @@ function Magnet(params::AbstractDict{Symbol,<:Any})
 end
 
 function S.magnetization_state(mag::Magnet, site_idx::Integer, state_idx::Integer)
-    return mag.site_params[site_idx].spin_mag - state_idx + 1
+    return @fastmath (mag.site_params[site_idx].spin_states - 1) * 0.5 - state_idx + 1
 end
 
 S.normalization_site_count(mag::Magnet) = S.site_count(mag.lattice)
 
 function generate_vertex_data(mag::Magnet, uc_bond, bond::MagnetBondParams)
-    dimi = Int(mag.site_params[uc_bond.iuc].spin_mag * 2 + 1)
-    dimj = Int(mag.site_params[uc_bond.juc].spin_mag * 2 + 1)
+    dimi = mag.site_params[uc_bond.iuc].spin_states
+    dimj = mag.site_params[uc_bond.juc].spin_states
 
     splusi, szi = S.spin_operators(Float64, dimi)
     splusj, szj = S.spin_operators(Float64, dimj)
@@ -136,7 +136,7 @@ function S.generate_sse_data(mag::Magnet)
         (uc_bond, bond) in zip(mag.lattice.uc.bonds, mag.bond_params)
     ]
 
-    sites = [S.Site(Int(s.spin_mag * 2 + 1)) for s in mag.site_params]
+    sites = [S.Site(s.spin_states) for s in mag.site_params]
     bonds = [S.Bond(bond.type, (bond.i, bond.j)) for bond in mag.lattice.bonds]
 
     return S.SSEData(vertex_data, sites, bonds)

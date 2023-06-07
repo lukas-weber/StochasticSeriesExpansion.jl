@@ -1,5 +1,5 @@
 function make_operator(func, magnet::S.Models.Magnet)
-    dims = [Int(site.spin_mag * 2 + 1) for site in magnet.site_params]
+    dims = [site.spin_states for site in magnet.site_params]
 
     lifter = Lifter(dims)
     op = spzeros(prod(dims), prod(dims))
