@@ -133,21 +133,15 @@ function construct_vertices(
                 diagonal_vertices[i] = VertexCode(true, length(weights) + 1)
             end
 
-            for tmp in [i, j]
-                tmp -= 1
-                for d in dims[end:-1:1]
-                    push!(leg_states, tmp % d + 1)
-                    tmp ÷= d
-                end
-                reverse!(@view(leg_states[end-NSites+1:end]))
-            end
+            append!(leg_states, reverse(split_idx(dims, i)))
+            append!(leg_states, reverse(split_idx(dims, j)))
 
             push!(weights, abs(w))
             push!(signs, w >= 0 ? 1 : -1)
         end
     end
 
-    return diagonal_vertices, weights, reshape(leg_states, 2 * NSites, :), signs
+    return diagonal_vertices, weights, reshape(leg_states, 2NSites, :), signs
 end
 
 function wrap_vertex_idx(
