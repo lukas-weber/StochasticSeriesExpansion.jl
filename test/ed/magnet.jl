@@ -22,23 +22,50 @@ function hamiltonian(magnet::S.Models.Magnet)
 end
 
 
+function calc_magnetization!(
+    obs::AbstractDict{Symbol,<:Any},
+    magnet::S.Models.Magnet,
+    ens::Ensemble;
+    ordering_vector::Tuple,
+    stagger_uc::Bool,
+    prefix::AbstractString,
+)
+
+    M =
+        make_operator(magnet) do M, lifter
+            for i in eachindex(magnet.site_params)
+                M +=
+                    S.staggered_sign(magnet.lattice, ordering_vector, stagger_uc, i) *
+                    spin(lifter, i, 3)
+            end
+            return M
+        end ./ S.normalization_site_count(magnet)
+
+    obs[Symbol(prefix * "Mag")] = mean(ens, M)
+    m2 = mean(ens, M^2)
+    m4 = mean(ens, M^4)
+    obs[Symbol(prefix * "Mag2")] = m2
+    obs[Symbol(prefix * "Mag4")] = m4
+    obs[Symbol(prefix * "AbsMag")] = mean(ens, abs.(M))
+
+    obs[Symbol(prefix * "BinderRatio")] = m2 .^ 2 ./ m4
+end
+
 function calc_observables!(
     obs::AbstractDict{Symbol,<:Any},
     magnet::S.Models.Magnet,
     ens::Ensemble,
 )
-    M = make_operator(magnet) do M, lifter
-        for i in eachindex(magnet.site_params)
-            M += spin(lifter, i, 3)
+    for stagger_uc in (false, true)
+        for q in Iterators.product(((false, true) for _ = 1:S.dimension(magnet.lattice))...)
+            calc_magnetization!(
+                obs,
+                magnet,
+                ens;
+                ordering_vector = q,
+                stagger_uc = stagger_uc,
+                prefix = String(S.magest_standard_prefix(q, stagger_uc)),
+            )
         end
-        return M
-    end ./ S.normalization_site_count(magnet)
-
-    obs[:Mag] = mean(ens, M)
-    obs[:Mag2] = mean(ens, M^2)
-
-    obs[:Mag4] = mean(ens, M^4)
-    obs[:AbsMag] = mean(ens, abs.(M))
-
-    obs[:BinderRatio] = obs[:Mag2] .^ 2 ./ obs[:Mag4]
+    end
 end

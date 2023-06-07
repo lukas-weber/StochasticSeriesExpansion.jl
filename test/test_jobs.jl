@@ -13,7 +13,7 @@ function testjob_magnet_square(sweeps::Integer, thermalization::Integer)
     tm.Lx = 2
     tm.Ly = 4
 
-    tm.measure = [:magnetization, :staggered_magnetization]
+    tm.measure = S.all_magests(S.Models.Magnet, S.dimension(tm.unitcell))
 
     tm.J = 1.23
     tm.hz = -0.2
