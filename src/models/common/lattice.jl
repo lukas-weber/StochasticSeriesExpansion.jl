@@ -150,7 +150,7 @@ function split_idx(l::Lattice, site_idx::Integer)
     return r[1], r[2:end]
 end
 
-site_count(l::Lattice) = length(l.uc.sites) * prod(l.Ls)
+site_count(l::Lattice)::Int = length(l.uc.sites) * prod(l.Ls)
 
 function site_pos(l::Lattice, site_idx::Integer)
     (iuc, r) = split_idx(l, site_idx)
