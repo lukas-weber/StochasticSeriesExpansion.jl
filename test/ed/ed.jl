@@ -134,9 +134,12 @@ function run_ed(::Type{Model}, job::JobInfo) where {Model}
 
         ensemble = Ensemble(Ts, Es, psi)
 
-        Emean = diag_mean(ensemble, Es) / S.normalization_site_count(model)
+        energy = diag_mean(ensemble, Es) / S.normalization_site_count(model)
+        specific_heat =
+            (diag_mean(ensemble, Es .^ 2) - diag_mean(ensemble, Es) .^ 2) ./
+            (Ts .^ 2 * S.normalization_site_count(model))
 
-        obs = Dict(:Energy => Emean)
+        obs = Dict(:Energy => energy, :SpecificHeat => specific_heat)
 
         calc_observables!(obs, model, ensemble)
 
