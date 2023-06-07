@@ -78,7 +78,7 @@ function LoadLeveller.measure!(mc::MC, ctx::LoadLeveller.MCContext)
         normalization_site_count(mc.model),
     )
 
-    measure_opstring!(mc, ctx, sign, (est(mc.model) for est in mc.opstring_estimators)...)
+    measure_opstring!(mc, ctx, sign, mc.opstring_estimators...)
 
     return nothing
 end
@@ -313,48 +313,60 @@ function measure_sign(operators::AbstractVector{<:OperCode}, data::SSEData)
     return Bool(sign & 1) ? -1.0 : 1.0
 end
 
-function measure_opstring!(
+@generated function measure_opstring!(
     mc::MC{Model},
     ctx::MCContext,
     sign::AbstractFloat,
-    estimators::AbstractOpstringEstimator...,
+    estimator_types::Type{<:AbstractOpstringEstimator}...,
 ) where {Model}
-    for estimator in estimators
-        init!(estimator, mc.state)
-    end
+    get_type(::Type{Type{T}}) where {T} = T
+    allocs = Expr(:tuple, (:($(get_type(type))(mc.model)) for type in estimator_types)...)
+    inits = Expr(
+        :block,
+        (:(init!(estimators[$i], mc.state)) for i = 1:length(estimator_types))...,
+    )
+    measures = Expr(
+        :block,
+        (
+            :(measure(estimators[$i], op, mc.state, mc.sse_data)) for
+            i = 1:length(estimator_types)
+        )...,
+    )
+    results = Expr(
+        :block,
+        (:(result(estimators[$i], ctx, mc.T, sign)) for i = 1:length(estimator_types))...,
+    )
 
-    n = zero(Int64)
-
-    for op in mc.operators
-        if isidentity(op)
-            continue
-        end
-
-        if !isdiagonal(op)
-            b = mc.sse_data.bonds[get_bond(op)]
-            vd = get_vertex_data(mc.sse_data, get_bond(op))
-
-            leg_state = get_leg_state(vd, get_vertex(op))
-
-            for (i, s) in enumerate(b.sites)
-                mc.state[s] = leg_state[leg_count(Model)÷2+i]
+    return quote
+        estimators = $allocs
+        $inits
+        n = zero(Int64)
+        for op in mc.operators
+            if isidentity(op)
+                continue
             end
-        end
 
-        if (n < mc.num_operators)
-            for estimator in estimators
-                measure(estimator, op, mc.state, mc.sse_data)
+            if !isdiagonal(op)
+                b = mc.sse_data.bonds[get_bond(op)]
+                vd = get_vertex_data(mc.sse_data, get_bond(op))
+
+                leg_state = get_leg_state(vd, get_vertex(op))
+
+                for (i, s) in enumerate(b.sites)
+                    mc.state[s] = leg_state[leg_count(Model)÷2+i]
+                end
             end
+
+            if (n < mc.num_operators)
+                $measures
+            end
+
+            n += 1
         end
 
-        n += 1
+        $results
+        return nothing
     end
-
-    for estimator in estimators
-        result(estimator, ctx, mc.T, sign)
-    end
-
-    return nothing
 end
 
 function print_opstring(operators::AbstractVector{<:OperCode}, data::SSEData)

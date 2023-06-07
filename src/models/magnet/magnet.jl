@@ -146,7 +146,7 @@ function S.get_opstring_estimators(mag::Magnet, params::AbstractDict)
     ests = Type[]
     for est in params[:measure]
         if est == :magnetization
-            q = ntuple(i -> 0, S.dimension(mag.lattice))
+            q = ntuple(i -> false, S.dimension(mag.lattice))
             push!(ests, S.MagnetizationEstimator{q,false,Magnet,Symbol()})
         elseif est == :staggered_magnetization
             neel = S.neel_vector(mag.lattice.uc)
@@ -157,6 +157,10 @@ function S.get_opstring_estimators(mag::Magnet, params::AbstractDict)
             end
             q, stagger_uc = neel
             push!(ests, S.MagnetizationEstimator{q,stagger_uc,Magnet,:Stag})
+        elseif est <: S.MagnetizationEstimator
+            push!(ests, est)
+        else
+            error("Unrecognized measure option '$est'")
         end
     end
 
