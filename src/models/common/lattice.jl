@@ -105,6 +105,11 @@ struct LatticeBond
     j::Int
 end
 
+struct LatticeSite{D}
+    iuc::Int
+    ix::NTuple{D,Int}
+end
+
 convert(::Type{Bond{2}}, lb::LatticeBond) = Bond(lb.type, (lb.i, lb.j))
 
 struct Lattice{D}
@@ -112,6 +117,7 @@ struct Lattice{D}
     Ls::NTuple{D,Int}
 
     bonds::Vector{LatticeBond}
+    sites::Vector{LatticeSite{D}}
 end
 
 dimension(lat::Lattice{D}) where {D} = D
@@ -120,6 +126,7 @@ dimension(unitcell::UnitCell{D}) where {D} = D
 function Lattice(uc::UnitCell{D}, Ls::NTuple{D,<:Integer}) where {D}
     dims = (length(uc.sites), Ls...)
     bonds = LatticeBond[]
+    sites = LatticeSite[]
     for r in Iterators.product([1:L for L in Ls]...)
         for (bond_type, b) in enumerate(uc.bonds)
             @assert 1 <= b.iuc <= length(uc.sites)
@@ -150,8 +157,16 @@ function site_pos(l::Lattice, site_idx::Integer)
     return l.uc.lattice_vectors * (r .+ l.uc.sites[iuc].pos)
 end
 
-function sublattice_sign(l::Lattice, site_idx::Integer)
-    return l.uc.sites[site_idx%length(l.uc.sites)].sublattice_sign
+function staggered_sign(
+    l::Lattice{D},
+    ordering_vector::NTuple{D,Bool},
+    stagger_uc::Bool,
+    site_idx::Integer,
+)::Int where {D}
+    sign = stagger_uc ? l.uc.sites[l.sites[site_idx].iuc].sublattice_sign : 1
+    sign *= 1 - 2 * isodd(sum(ordering_vector .* l.sites[site_idx].ix))
+
+    return sign
 end
 
 module UnitCells

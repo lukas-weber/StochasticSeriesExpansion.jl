@@ -38,23 +38,26 @@ function MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix}(
     )
 end
 
-function stag_sign(
-    est::MagnetizationEstimator{OrderingVector,StaggerUC},
+function staggered_sign(
+    est::MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension},
     site_idx::Integer,
-) where {OrderingVector,StaggerUC}
-    iuc, ix = split_idx(est.model.lattice, site_idx)
-
-    sign = StaggerUC ? est.model.lattice.unitcell.sites[iuc].sublattice_sign : 1
-    sign *= (-1)^sum(OrderingVector .* ix)
-
-    return sign
+)::Int where {OrderingVector,StaggerUC,Model,Prefix,Dimension}
+    return staggered_sign(
+        est.model.lattice::Lattice{Dimension},
+        OrderingVector,
+        StaggerUC,
+        site_idx,
+    )
 end
 
-function init!(est::MagnetizationEstimator, state::AbstractVector)
-    est.tmpmag = sum(
+function init!(
+    est::MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension},
+    state::AbstractVector,
+) where {OrderingVector,StaggerUC,Model,Prefix,Dimension}
+    est.tmpmag = @fastmath sum(
         site ->
-            stag_sign(est, site) * magnetization_state(est.model, site, state[site]),
-        1:site_count(est.model.lattice),
+            staggered_sign(est, site) * magnetization_state(est.model, site, state[site]),
+        1:site_count(est.model.lattice::Lattice{Dimension}),
     )
 
     est.mag = est.tmpmag
@@ -81,7 +84,7 @@ function measure(
             site = magnetization_lattice_site_idx(est.model, bond.sites[l])
             if site !== nothing
                 est.tmpmag +=
-                    stag_sign(est, site) * (
+                    staggered_sign(est, site) * (
                         magnetization_state(est.model, site, leg_state[nsites+l]) -
                         magnetization_state(est.model, site, leg_state[l])
                     )
