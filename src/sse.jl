@@ -153,13 +153,12 @@ function diagonal_update(
             bond = rand(ctx.rng, 1:length(mc.sse_data.bonds))
             b = mc.sse_data.bonds[bond]
 
-            # TODO: define a function for this?
-            state_idx = 0
-            for s = 1:NSites
-                state_idx *= mc.sse_data.sites[b.sites[s]].dim
-                state_idx += mc.state[b.sites[s]] - 1
-            end
-            state_idx += 1
+            # reversed because of join_idx convention
+            dims = tuple(
+                (mc.sse_data.sites[site].dim for site in Iterators.reverse(b.sites))...,
+            )
+            idxs = tuple((mc.state[site] for site in Iterators.reverse(b.sites))...)
+            state_idx = join_idx(dims, idxs)
 
             vertex_data = get_vertex_data(mc.sse_data, bond)
             new_vert = get_diagonal_vertex(vertex_data, state_idx)
