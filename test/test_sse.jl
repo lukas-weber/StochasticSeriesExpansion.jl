@@ -12,13 +12,16 @@ function isconsistent(
         if S.isidentity(op)
             continue
         end
-        sites = sse_data.bonds[S.get_bond(op)].sites
+        sites = collect(sse_data.bonds[S.get_bond(op)].sites)
         leg_states =
             S.get_leg_state(S.get_vertex_data(sse_data, S.get_bond(op)), S.get_vertex(op))
-        if state[collect(sites)] != leg_states[1:length(sites)]
+        if !all(state[sites] .<= getfield.(sse_data.sites[sites], :dim))
             return false
         end
-        state[collect(sites)] .= leg_states[length(sites)+1:end]
+        if state[sites] != leg_states[1:length(sites)]
+            return false
+        end
+        state[sites] .= leg_states[length(sites)+1:end]
     end
 
     return true
@@ -42,9 +45,10 @@ end
         [S.OperCode(1, S.get_vertex_data(sse_data, 1).diagonal_vertices[3])],
         [S.OperCode(1, S.VertexCode(true, 1)), S.OperCode(1, S.VertexCode(true, 1))],
     ]
+    rng = Random.Xoshiro()
     for operators in operatorss
         S.make_vertex_list!(vl, operators, sse_data.bonds)
-        S.worm_traverse!((1, 1, 1), operators, vl.vertices, sse_data, Random.Xoshiro())
+        S.worm_traverse!((1, 1, 1), operators, vl.vertices, sse_data, rng)
 
         state0 = [
             vf[1] < 0 ? 1 :
@@ -64,10 +68,12 @@ end
         :T => 0.1,
         :unitcell => S.UnitCells.honeycomb,
         :measure => [],
+        :parameter_map => Dict(:sites => [Dict(:S => :S1), Dict(:S => :S2)]),
         :Lx => 4,
         :Ly => 4,
         :J => 1.4,
-        :S => 1 // 2,
+        :S1 => 1 // 2,
+        :S2 => 1,
         :binsize => 1,
         :sweeps => sweeps,
         :thermalization => 100,

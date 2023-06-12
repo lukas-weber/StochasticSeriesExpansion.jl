@@ -24,7 +24,44 @@ function testjob_magnet_square(sweeps::Integer, thermalization::Integer)
         task(tm; T = T)
     end
 
-    return tm
+    return "magnet_square", S.Models.Magnet, tm
+end
+
+function testjob_honeycomb(sweeps::Integer, thermalization::Integer)
+    tm = TaskMaker()
+    tm.sweeps = sweeps
+    tm.thermalization = thermalization
+    tm.binsize = 1000
+
+    Ts = range(0.04, 4.00, length = 7)
+
+    tm.unitcell = S.UnitCells.honeycomb
+    tm.Lx = 2
+    tm.Ly = 2
+
+    tm.parameter_map = Dict(
+        :sites => [Dict(:S => :Sa), Dict(:S => :Sb)],
+        :bonds => [Dict(:J => :J1), Dict(:J => :J2), Dict(:J => :J3)],
+    )
+
+    tm.measure = S.all_magests(S.Models.Magnet, S.dimension(tm.unitcell))
+
+    tm.J1 = 1.0
+    tm.J2 = 1.0
+    tm.J3 = 1.0
+    # tm.Dz = 0.2
+    # tm.Dx = 0.5
+
+    tm.Sa = 1 // 2
+    tm.Sb = 1
+
+    tm.ed_run = 1
+
+    for T in Ts
+        task(tm; T = T)
+    end
+
+    return "honeycomb", S.Models.Magnet, tm
 end
 
 function generate_test_jobs(
@@ -50,11 +87,8 @@ function generate_test_jobs(
         return nothing
     end
 
-    add_test_job(
-        "magnet_square",
-        S.Models.Magnet,
-        testjob_magnet_square(sweeps, thermalization),
-    )
+    add_test_job(testjob_honeycomb(sweeps, thermalization)...)
+    add_test_job(testjob_magnet_square(sweeps, thermalization)...)
 
     return jobs
 end
