@@ -130,11 +130,12 @@ function construct_vertices(
 
         if abs(w) > tolerance
             if i == j
-                diagonal_vertices[i] = VertexCode(true, length(weights) + 1)
+                reversed_i = join_idx(dims, reverse(split_idx(reverse(dims), i)))
+                diagonal_vertices[reversed_i] = VertexCode(true, length(weights) + 1)
             end
 
-            append!(leg_states, reverse(split_idx(dims, i)))
-            append!(leg_states, reverse(split_idx(dims, j)))
+            append!(leg_states, reverse(split_idx(reverse(dims), i)))
+            append!(leg_states, reverse(split_idx(reverse(dims), j)))
 
             push!(weights, abs(w))
             push!(signs, w >= 0 ? 1 : -1)
@@ -293,7 +294,7 @@ function construct_transitions(
             iempty_step_in = findfirst(s -> isinvalid(transitions[s..., empty_v]), steps)
             if iempty_step_in !== nothing
                 v = empty_v
-                step_in = steps[iempty_step_in]
+                step_in = inv_steps[steps[iempty_step_in]...]
                 break
             end
         end
