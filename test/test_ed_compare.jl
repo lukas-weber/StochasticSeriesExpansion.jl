@@ -22,7 +22,9 @@ end
             @testset "$(job.name)" begin
                 get_model(::Type{S.MC{Model,NSites}}) where {Model,NSites} = Model
                 model = get_model(job.mc)
+                println("Running ED...")
                 (obsnames, ed_data) = run_ed(model, job)
+                println("Running MC...")
                 mc_data = run_mc(job)
 
                 for obsname in obsnames
