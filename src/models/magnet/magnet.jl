@@ -43,10 +43,13 @@ function map(parameter_map::ParameterMap, path...)::Symbol
 
     res = parameter_map.map
     for p in path
-        if !haskey(res, p)
-            return path[end]
+        try
+            res = res[p]
+        catch e
+            if e isa KeyError
+                return path[end]
+            end
         end
-        res = res[p]
     end
 
     return res
