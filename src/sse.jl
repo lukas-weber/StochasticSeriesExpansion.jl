@@ -154,8 +154,8 @@ function diagonal_update(
             b = mc.sse_data.bonds[bond]
 
             # reversed because of join_idx convention
-            dims = Tuple(mc.sse_data.sites[site].dim for site in b.sites)
-            idxs = Tuple(mc.state[site] for site in b.sites)
+            dims = tuple((mc.sse_data.sites[site].dim for site in b.sites)...)
+            idxs = tuple((mc.state[site] for site in b.sites)...)
             state_idx = join_idx(dims, idxs)
 
             vertex_data = get_vertex_data(mc.sse_data, bond)
