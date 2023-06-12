@@ -20,4 +20,5 @@ abstract type AbstractOpstringEstimator end
 @stubT register_evaluables(
     est::Type{<:AbstractOpstringEstimator},
     eval::LoadLeveller.Evaluator,
+    params::AbstractDict,
 )

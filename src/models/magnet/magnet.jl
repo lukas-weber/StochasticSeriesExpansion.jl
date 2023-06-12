@@ -27,6 +27,8 @@ struct Magnet <: S.AbstractModel
 
     bond_params::Vector{MagnetBondParams}
     site_params::Vector{MagnetSiteParams}
+
+    opstring_estimators::Vector{DataType}
 end
 
 struct ParameterMap
@@ -92,7 +94,8 @@ function Magnet(params::AbstractDict{Symbol,<:Any})
         prod(lat.Ls),
     )
 
-    return Magnet(lat, full_bond_params, full_site_params)
+    opstring_ests = gen_opstring_estimators(lat, params)
+    return Magnet(lat, full_bond_params, full_site_params, opstring_ests)
 end
 
 function S.magnetization_state(mag::Magnet, site_idx::Integer, state_idx::Integer)
@@ -142,14 +145,14 @@ function S.generate_sse_data(mag::Magnet)
     return S.SSEData(vertex_data, sites, bonds)
 end
 
-function S.get_opstring_estimators(mag::Magnet, params::AbstractDict)
-    ests = Type[]
-    for est in params[:measure]
+function gen_opstring_estimators(lattice::S.Lattice, params::AbstractDict)
+    ests = DataType[]
+    for est in get(params, :measure, [])
         if est == :magnetization
-            q = ntuple(i -> false, S.dimension(mag.lattice))
+            q = ntuple(i -> false, S.dimension(lattice))
             push!(ests, S.MagnetizationEstimator{q,false,Magnet,Symbol()})
         elseif est == :staggered_magnetization
-            neel = S.neel_vector(mag.lattice.uc)
+            neel = S.neel_vector(lattice.uc)
             if neel === nothing
                 error(
                     "selected :staggered_magnetization measurement, but lattice does not have a Neel vector.",
@@ -166,5 +169,7 @@ function S.get_opstring_estimators(mag::Magnet, params::AbstractDict)
 
     return ests
 end
+
+S.get_opstring_estimators(mag::Magnet) = mag.opstring_estimators
 
 end

@@ -183,6 +183,7 @@ get_prefix(
 function register_evaluables(
     est::Type{<:MagnetizationEstimator},
     eval::LoadLeveller.Evaluator,
+    ::AbstractDict,
 )
     symbols, signsymbols = magest_obs_symbols(get_prefix(est))
 

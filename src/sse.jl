@@ -31,7 +31,7 @@ function MC{Model,NSites}(params::AbstractDict) where {Model,NSites}
     sse_data = generate_sse_data(model)
     return MC{Model,NSites}(
         vertex_list = VertexList{leg_count(Model) ÷ 2}(length(sse_data.sites)),
-        opstring_estimators = get_opstring_estimators(model, params),
+        opstring_estimators = get_opstring_estimators(model),
         operators = OperCode[],
         state = StateIdx[],
         T = params[:T],
@@ -113,8 +113,8 @@ function LoadLeveller.register_evaluables(
 
     model = Model(params)
 
-    for estimator in get_opstring_estimators(model, params)
-        register_evaluables(estimator, eval)
+    for estimator in get_opstring_estimators(model)
+        register_evaluables(estimator, eval, params)
     end
 
     #register_evaluables(model, eval, params)
