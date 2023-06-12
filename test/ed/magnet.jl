@@ -53,6 +53,8 @@ function calc_magnetization!(
     obs[symbols.binderratio] = m2 .^ 2 ./ m4
     obs[symbols.magchi] =
         integrated_correlator(ens, M, M) * S.normalization_site_count(magnet)
+
+    return nothing
 end
 
 function calc_observables!(

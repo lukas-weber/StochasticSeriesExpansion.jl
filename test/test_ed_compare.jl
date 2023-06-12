@@ -34,7 +34,7 @@ end
                     p = pvalue(ExactOneSampleKSTest(z, Normal()))
                     if p <= 1e-3
                         println("$obsname: p = $p")
-                        println("MC: $(mc_data_nudge)\nED:$(ed_data[!,obsname])")
+                        println("MC: $(mc_data_nudge)\nED: $(ed_data[!,obsname])")
                         if isdefined(Main, :Plots)
                             pl = plot(
                                 ed_data[!, :T],

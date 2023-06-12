@@ -46,7 +46,7 @@ function LoadLeveller.init!(mc::MC, ctx::LoadLeveller.MCContext, params::Abstrac
 
     init_opstring_cutoff =
         get(params, :init_opstring_cutoff, round(Int, length(mc.sse_data.sites) * mc.T))
-    mc.operators = [OperCode(Identity) for i = 1:init_opstring_cutoff]
+    mc.operators = [OperCode(Identity) for _ = 1:init_opstring_cutoff]
 
     diagonal_warmup_sweeps = get(params, :diagonal_warmup_sweeps, 5)
     for _ = 1:diagonal_warmup_sweeps
@@ -154,10 +154,8 @@ function diagonal_update(
             b = mc.sse_data.bonds[bond]
 
             # reversed because of join_idx convention
-            dims = tuple(
-                (mc.sse_data.sites[site].dim for site in Iterators.reverse(b.sites))...,
-            )
-            idxs = tuple((mc.state[site] for site in Iterators.reverse(b.sites))...)
+            dims = Tuple(mc.sse_data.sites[site].dim for site in b.sites)
+            idxs = Tuple(mc.state[site] for site in b.sites)
             state_idx = join_idx(dims, idxs)
 
             vertex_data = get_vertex_data(mc.sse_data, bond)
