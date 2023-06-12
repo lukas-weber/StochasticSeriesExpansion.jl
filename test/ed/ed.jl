@@ -91,7 +91,8 @@ function integrated_correlator(
 
     return [
         sum(
-            2ens.ρ[n, i] / (ens.Es[n] == ens.Es[m] ? 2T : ens.Es[m] - ens.Es[n]) *
+            2ens.ρ[n, i] /
+            (isapprox(ens.Es[n], ens.Es[m], atol = 1e-6) ? 2T : ens.Es[m] - ens.Es[n]) *
             Anm[n, m] *
             Bnm[m, n] for n in eachindex(ens.Es), m in eachindex(ens.Es)
         ) for (i, T) in enumerate(ens.Ts)

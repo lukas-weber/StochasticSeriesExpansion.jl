@@ -21,6 +21,21 @@ function hamiltonian(magnet::S.Models.Magnet)
     end
 end
 
+function calc_magnetization!(
+    obs::AbstractDict{Symbol,<:Any},
+    magnet::S.Models.Magnet,
+    ens::Ensemble,
+    ::Type{S.MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}},
+) where {OrderingVector,StaggerUC,Model,Prefix,Dimension}
+    calc_magnetization!(
+        obs,
+        magnet,
+        ens;
+        ordering_vector = OrderingVector,
+        stagger_uc = StaggerUC,
+        prefix = Prefix,
+    )
+end
 
 function calc_magnetization!(
     obs::AbstractDict{Symbol,<:Any},
@@ -62,16 +77,9 @@ function calc_observables!(
     magnet::S.Models.Magnet,
     ens::Ensemble,
 )
-    for stagger_uc in (false, true)
-        for q in Iterators.product(((false, true) for _ = 1:S.dimension(magnet.lattice))...)
-            calc_magnetization!(
-                obs,
-                magnet,
-                ens;
-                ordering_vector = q,
-                stagger_uc = stagger_uc,
-                prefix = S.magest_standard_prefix(q, stagger_uc),
-            )
-        end
+    for est in S.get_opstring_estimators(magnet)
+        calc_magnetization!(obs, magnet, ens, est)
     end
+
+    return nothing
 end
