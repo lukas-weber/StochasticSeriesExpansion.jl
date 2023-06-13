@@ -123,8 +123,9 @@ function magest_standard_prefix(q::Tuple{Vararg{Bool}}, stagger_uc::Bool)
         return Symbol()
     end
     direction_name(i) = mod('X' - 'A' + i - 1, 26) + 'A'
-    prefix =
-        Symbol("Stag" * join("$(direction_name(i))" for i in findall(q)) * "uc"^stagger_uc)
+    return Symbol(
+        "Stag" * join("$(direction_name(i))" for i in findall(q)) * "uc"^stagger_uc,
+    )
 end
 
 """
