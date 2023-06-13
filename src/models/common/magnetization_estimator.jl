@@ -189,12 +189,12 @@ function register_evaluables(
     symbols, signsymbols = magest_obs_symbols(get_prefix(est))
 
     for obs in (:mag, :absmag, :mag2, :mag4, :magchi)
-        evaluate!(unsign, eval, symbols[obs], [signsymbols[obs], :Sign])
+        evaluate!(unsign, eval, symbols[obs], (signsymbols[obs], :Sign))
     end
     evaluate!(
         eval,
         symbols.binderratio,
-        [signsymbols.mag4, signsymbols.mag2, :Sign],
+        (signsymbols.mag4, signsymbols.mag2, :Sign),
     ) do smag4, smag2, sign
         if smag2 == smag4 == 0
             return zero(smag2)

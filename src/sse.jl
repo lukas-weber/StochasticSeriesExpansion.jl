@@ -119,11 +119,11 @@ function LoadLeveller.register_evaluables(
 
     #register_evaluables(model, eval, params)
 
-    evaluate!(unsign, eval, :Energy, [:SignEnergy, :Sign])
+    evaluate!(unsign, eval, :Energy, (:SignEnergy, :Sign))
     evaluate!(
         eval,
         :SpecificHeat,
-        [:SignOperatorCount2, :SignOperatorCount, :Sign],
+        (:SignOperatorCount2, :SignOperatorCount, :Sign),
     ) do sn2, sn, s
         return (sn2 / s - sn * sn / s^2 - sn / s) / normalization_site_count(model)
     end
