@@ -1,19 +1,53 @@
 using StaticArrays
 
+"""
+    UCBond{D}
+
+Defines a unit cell bond between site `i` and `j`. Construct it using
+
+    UCBond(iuc, jd, juc)
+
+`iuc` is the intra-unit-cell index of `i`. `jd = (jdx, jdy, ...)` are the `D` (nonnegative) offsets of the unit cell containing `j` with respect to the one containing `i`. `juc` is the intra-unit-cell index of `j`. For examples, see [`UnitCells`](@ref).
+
+These parameters are accessible as public fields as well.
+"""
 struct UCBond{D}
     iuc::Int
-    jd::NTuple{D,Int} # position of second unit cell
+    jd::NTuple{D,Int}
     juc::Int
 end
 
+"""
+    UCSite{D}
+
+Defines a site within the unit cell. Construct it using
+
+    UCSite(pos::Tuple)
+
+`pos` contains the position of the site inside the unit cell in the lattice vector basis.
+
+## Public fields:
+
+* `pos`: see above
+* `coordination`: coordination number of the site
+"""
 struct UCSite{D}
     pos::SVector{D,Float64}
     sublattice_sign::Int
-    coordination::Int # filled automatically
+    coordination::Int
 end
 
 UCSite(pos::Tuple) = UCSite(SVector(pos), 0, 0)
 
+"""
+    UnitCell{D}
+
+The unit cell of a `D`-dimensional lattice.
+
+    UnitCell(lattice_vectors::SMatrix{D,D, Float64}, sites::AbstractVector{UCSite{D}}, bonds::AbstractVector{UCBond{D}})
+
+The columns of `lattice_vector` are the lattice vectors. `sites` and `bonds` define the `bonds` within the unit cell.
+"""
 struct UnitCell{D}
     lattice_vectors::SMatrix{D,D,Float64} # as columns
 
@@ -99,12 +133,35 @@ function neel_vector(uc::UnitCell{D})::Union{Nothing,Tuple{NTuple{D,Bool},Bool}}
     return nothing
 end
 
+"""
+    LatticeBond
+
+Information about a lattice bond.
+
+## Public fields
+
+* `type`: translation symmetry equivalence class of the bond (does not take other symmetries into account!)
+* `i`, `j`: sites connected by the bond
+
+!!! note
+In contrast to [`SSEData`](@ref), `Lattice` only supports 2-site bonds at this point. 
+"""
 struct LatticeBond
     type::Int
     i::Int
     j::Int
 end
 
+"""
+    LatticeSite{D}
+
+Information about a lattice site, locating its position inside the lattice.
+
+## Public fields
+
+* `iuc`: index within the unit cell
+* `ix`: `D`-tuple of indices of the unit cell along the lattice dimensions
+"""
 struct LatticeSite{D}
     iuc::Int
     ix::NTuple{D,Int}
@@ -112,6 +169,20 @@ end
 
 convert(::Type{Bond{2}}, lb::LatticeBond) = Bond(lb.type, (lb.i, lb.j))
 
+"""
+    Lattice{D}
+
+This is a model-agnostic implementation of a `D`-dimensional lattice. It allows generating translation symmetric bond graph based on
+minimal information derived from a unit cell object.
+
+## Public fields
+
+* `uc`: underlying `UnitCell` object
+* `Ls`: tuple of lattice lengths
+* `bonds`: array of [`LatticeBond`](@ref).
+* `site`: array of [`LatticeSite`](@ref), useful for quickly converting linear site indices to spatial ones.
+
+"""
 struct Lattice{D}
     uc::UnitCell{D}
     Ls::NTuple{D,Int}
@@ -169,6 +240,9 @@ function staggered_sign(
     return sign
 end
 
+"""
+The `UnitCells` module provides some predefined unitcells that can be used to construct lattices. It is also a helpful resource to see how to define your own unit cells.
+"""
 module UnitCells
 import ..UnitCell, ..UCSite, ..UCBond
 

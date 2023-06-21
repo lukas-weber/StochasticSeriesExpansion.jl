@@ -1,6 +1,28 @@
-"""Generic OpstringEstimator that can be used for all models that have (i) a field `lattice::Lattice` and (ii) implement [`magnetization_state(::Model, state_idx)`](@ref).
+@doc raw"""
+    MagnetizationEstimator{OrderingVector, StaggerUC, Model, Prefix, Dimension} <: AbstractOpstringEstimator
 
-`OrderingVector` is the Fourier component to compute in units of π. For example ``(1,1)`` corresponds to ``(π,π)``. If `StaggerUC` is true, the sublattice sign of the unitcell is additionally taken into account."""
+Generic operator string estimator that can be used for all models that have
+
+* a field `lattice::Lattice`
+* implement [`magnetization_state`](@ref).
+
+optionally, [`magnetization_lattice_site_idx`](@ref).
+
+It computes the
+* `:Mag`, magnetization ``\langle m\rangle``
+* `:AbsMag`, absolute magnetization ``\langle |m|\rangle``
+* `:Mag2`, squared magnetization ``\langle m^2\rangle``
+* `:Mag4`, quartic magnetization ``\langle m^4\rangle``
+* `:MagChi`, susceptibility ``N \int_0^\beta d\tau \langle m(\tau) m\rangle``
+* `:BinderRatio`, Binder ratio ``\langle m^2\rangle^2/\langle m^4\rangle``
+
+Here, ``m = \frac{1}{N} \sum_i m_i`` where ``m_i`` is given by [`magnetization_state`](@ref) and ``N`` is given by [`StochasticSeriesExpansion.normalization_site_count`](@ref).
+## Type parameters
+
+* `OrderingVector`: Fourier component to compute in units of π. For example ``(1,1)`` corresponds to ``(π,π)``
+* If `StaggerUC` is true, the sublattice sign of the unitcell is additionally taken into account
+* `Model`: model type to apply this estimator on
+* `Prefix`: (Symbol) this prefix is added to all observable names. Consider [`magest_standard_prefix`](@ref)."""
 mutable struct MagnetizationEstimator{
     OrderingVector,
     StaggerUC,
@@ -19,7 +41,11 @@ mutable struct MagnetizationEstimator{
     mag4::Float64
 end
 
-"""Generates a list of all valid `MagnetizationEstimator` types for a given model. Useful if you want to measure them all."""
+"""
+    all_magests(model::AbstractModel, dimension)
+
+Generates a list of all valid `MagnetizationEstimator` types for a given model. Useful if you want to measure them all.
+"""
 function all_magests(model::Type{<:AbstractModel}, dimension::Integer)
     return [
         MagnetizationEstimator{
@@ -33,10 +59,18 @@ function all_magests(model::Type{<:AbstractModel}, dimension::Integer)
     ]
 end
 
-# Model extension interface:
+"""
+    magnetization_state(model::AbstractModel, site_idx, state_idx)
+
+This interface needs to be implemented by any model that wants to use `MagnetizationEstimator`. 
+"""
 @stub magnetization_state(model::AbstractModel, site_idx::Integer, state_idx::Integer)
 
-"""In models where additional degrees of freedom exist, this function maps sse site indices to physical lattice site indices"""
+"""
+    magnetization_lattice_site_idx(model::AbstractModel, sse_site_idx) -> Integer
+
+In models where additional degrees of freedom exist, this function maps sse site indices to physical lattice site indices.
+"""
 magnetization_lattice_site_idx(::AbstractModel, sse_site_idx::Integer) = sse_site_idx
 
 function MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}(
@@ -118,6 +152,11 @@ function measure(
     return nothing
 end
 
+"""
+    magest_standard_prefix(q::Tuple{Bool...}, stagger_uc::Bool)
+
+Returns the conventional prefix for a magnetization estimator with ordering vector `q` and `stagger_uc` set.
+"""
 function magest_standard_prefix(q::Tuple{Vararg{Bool}}, stagger_uc::Bool)
     if !any(q) && !stagger_uc
         return Symbol()

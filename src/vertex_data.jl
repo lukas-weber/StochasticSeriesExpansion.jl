@@ -27,6 +27,15 @@ struct VertexData{NSites}
     leg_states::Matrix{StateIdx} # [leg, vertex]
 end
 
+"""
+    VertexData(dims::Tuple{Integer...}, bond_hamiltonian::AbstractMatrix; energy_offset_factor = 0.25)
+
+This object holds the probability tables used for a bond in the abstract loop update algorithm.
+
+`dims` are the local Hilbert space dimensions of each site of the bond.
+
+`bond_hamiltonian` is the `prod(dims)`×`prod(dims)` matrix describing the bond Hamiltonian in the computational basis. The representation of the product Hilbert space follows the convention of `LinearAlgebra.kron`, so that if you have site-local operators `op1`, `op2`, `kron(op1, op2)` will give you a correct bond Hamiltonian.
+"""
 function VertexData(
     dims::NTuple{NSites,<:Integer},
     bond_hamiltonian::AbstractMatrix;
@@ -78,6 +87,12 @@ get_diagonal_vertex(vd::VertexData, compound_state_idx::Integer) =
 get_vertex_weight(vd::VertexData, v::VertexCode) =
     isinvalid(v) ? 0.0 : vd.weights[get_vertex_idx(v)]
 get_sign(vd::VertexData, v::VertexCode) = vd.signs[get_vertex_idx(v)]
+
+"""
+    get_leg_state(vd::VertexData, v::VertexCode)
+
+Returns the leg states (matrix elements) of the vertex `v` as an array of state indices.
+"""
 get_leg_state(vd::VertexData, v::VertexCode) = @view vd.leg_states[:, get_vertex_idx(v)]
 
 function scatter(
