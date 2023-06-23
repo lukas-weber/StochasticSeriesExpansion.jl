@@ -12,10 +12,10 @@ SSEData
 get_vertex_data
 ```
 
-To construct an `SSEData` object you need to assemble the `VertexData` and `Bond` objects.
+To construct an `SSEData` object you need to assemble the `VertexData` and `SSEBond` objects.
 
 ```@docs
-Bond
+SSEBond
 VertexData
 get_leg_state
 ```
