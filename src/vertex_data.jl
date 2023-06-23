@@ -28,26 +28,33 @@ struct VertexData{NSites}
 end
 
 """
-    VertexData(dims::Tuple{Integer...}, bond_hamiltonian::AbstractMatrix; energy_offset_factor = 0.25)
+    VertexData(dims::Tuple{Integer...}, bond_hamiltonian::AbstractMatrix; 
+               energy_offset_factor = 0.25, tolerance = 1e-7, lp_tolerance = 1e-10)
 
 This object holds the probability tables used for a bond in the abstract loop update algorithm.
 
 `dims` are the local Hilbert space dimensions of each site of the bond.
 
 `bond_hamiltonian` is the `prod(dims)`×`prod(dims)` matrix describing the bond Hamiltonian in the computational basis. The representation of the product Hilbert space follows the convention of `LinearAlgebra.kron`, so that if you have site-local operators `op1`, `op2`, `kron(op1, op2)` will give you a correct bond Hamiltonian.
+
+A constant is added to the bond hamiltonian so that its smallest diagonal element is
+```math
+\\min_i(h_{ii}) = \\alpha \\times [\\max_i (h_{ii}) - \\min_i (h_{ii})] \\ge 0,
+```
+where ``\\alpha`` is given by the parameter `energy_offset_factor`.
+
+Matrix elements smaller `tolerance` are considered zero. `lp_tolerance` sets the tolerance for the underlying linear programming problem.
 """
 function VertexData(
     dims::NTuple{NSites,<:Integer},
     bond_hamiltonian::AbstractMatrix;
     energy_offset_factor::AbstractFloat = 0.25,
+    tolerance::AbstractFloat = 1e-7,
+    lp_tolerance::AbstractFloat = 1e-10,
 ) where {NSites}
     energy_offset = calc_energy_offset(bond_hamiltonian, energy_offset_factor)
     total_dim = prod(dims)
     max_worm_count = maximum(worm_count, dims)
-
-    # TODO make variable
-    tolerance = 1e-7
-    lp_tolerance = 1e-10
 
     (diagonal_vertices, weights, leg_states, signs) =
         construct_vertices(dims, bond_hamiltonian, energy_offset, tolerance)
