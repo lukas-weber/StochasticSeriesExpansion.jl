@@ -1,6 +1,6 @@
 module StochasticSeriesExpansion
 export AbstractModel,
-    SSEData, AbstractOpstringEstimator, Bond, VertexData, get_vertex_data, get_leg_state
+    SSEData, AbstractOpstringEstimator, SSEBond, VertexData, get_vertex_data, get_leg_state
 
 export MagnetizationEstimator,
     all_magests, magnetization_state, magnetization_lattice_site_idx, magest_standard_prefix

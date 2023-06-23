@@ -142,8 +142,8 @@ function S.generate_sse_data(mag::Magnet)
         (uc_bond, bond) in zip(mag.lattice.uc.bonds, mag.bond_params)
     ]
 
-    sites = [S.Site(s.spin_states) for s in mag.site_params]
-    bonds = [S.Bond(bond.type, (bond.i, bond.j)) for bond in mag.lattice.bonds]
+    sites = [S.SSESite(s.spin_states) for s in mag.site_params]
+    bonds = [S.SSEBond(bond.type, (bond.i, bond.j)) for bond in mag.lattice.bonds]
 
     return S.SSEData(vertex_data, sites, bonds)
 end

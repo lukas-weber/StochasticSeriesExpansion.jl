@@ -15,7 +15,7 @@ end
 function make_vertex_list!(
     vl::VertexList{NSites},
     operators::AbstractVector{<:OperCode},
-    bonds::AbstractVector{<:Bond{NSites}},
+    bonds::AbstractVector{<:SSEBond{NSites}},
 ) where {NSites}
     if size(vl.vertices, 2) != length(operators)
         vl.vertices = fill((-1, -1), 2 * NSites, length(operators))

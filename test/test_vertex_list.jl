@@ -2,7 +2,7 @@
 
     site_count = 4
     leg_count = 4
-    bonds = [S.Bond(1, (1, 2)), S.Bond(1, (2, 3)), S.Bond(1, (1, 3))]
+    bonds = [S.SSEBond(1, (1, 2)), S.SSEBond(1, (2, 3)), S.SSEBond(1, (1, 3))]
 
     v = S.VertexCode(false, 1)
     operators = [

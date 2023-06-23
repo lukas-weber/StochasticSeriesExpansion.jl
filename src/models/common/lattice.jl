@@ -167,8 +167,6 @@ struct LatticeSite{D}
     ix::NTuple{D,Int}
 end
 
-convert(::Type{Bond{2}}, lb::LatticeBond) = Bond(lb.type, (lb.i, lb.j))
-
 """
     Lattice{D}
 
