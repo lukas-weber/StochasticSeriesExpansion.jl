@@ -1,3 +1,4 @@
+using LinearAlgebra
 
 @testset "SSEData" begin
     @testset "inconsistent dims" begin
