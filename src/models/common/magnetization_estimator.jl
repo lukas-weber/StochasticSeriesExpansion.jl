@@ -23,7 +23,7 @@ Here, ``m = \frac{1}{N} \sum_i m_i`` where ``m_i`` is given by [`magnetization_s
 * If `StaggerUC` is true, the sublattice sign of the unitcell is additionally taken into account
 * `Model`: model type to apply this estimator on
 * `Prefix`: (Symbol) this prefix is added to all observable names. Consider [`magest_standard_prefix`](@ref)."""
-mutable struct MagnetizationEstimator{
+Base.@kwdef mutable struct MagnetizationEstimator{
     OrderingVector,
     StaggerUC,
     Model<:AbstractModel,
@@ -73,20 +73,6 @@ In models where additional degrees of freedom exist, this function maps sse site
 """
 magnetization_lattice_site_idx(::AbstractModel, sse_site_idx::Integer) = sse_site_idx
 
-function MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}(
-    model::Model,
-) where {OrderingVector,StaggerUC,Model,Prefix,Dimension}
-    return MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}(
-        model,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-    )
-end
-
 function staggered_sign(
     est::MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension},
     site_idx::Integer,
@@ -99,28 +85,37 @@ function staggered_sign(
     )
 end
 
-function init!(
-    est::MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension},
-    state::AbstractVector,
+function init(
+    ::Type{MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}},
+    model::Model,
+    state::AbstractVector{StateIdx},
 ) where {OrderingVector,StaggerUC,Model,Prefix,Dimension}
-    est.tmpmag = @fastmath sum(
+    tmpmag = @fastmath sum(
         site ->
-            staggered_sign(est, site) * magnetization_state(est.model, site, state[site]),
-        1:site_count(est.model.lattice::Lattice{Dimension}),
+            staggered_sign(model.lattice, OrderingVector, StaggerUC, site) * magnetization_state(model, site, state[site]),
+        1:site_count(model.lattice::Lattice{Dimension}),
     )
 
-    est.mag = est.tmpmag
-    est.absmag = abs(est.tmpmag)
-    est.mag2 = est.tmpmag^2
-    est.mag4 = est.tmpmag^4
+    mag = tmpmag
+    absmag = abs(tmpmag)
+    mag2 = tmpmag^2
+    mag4 = tmpmag^4
 
-    return nothing
+    return MagnetizationEstimator{OrderingVector, StaggerUC, Model, Prefix,Dimension}(;
+        model = model,
+        n = 1,
+        tmpmag = tmpmag,
+        mag = mag,
+        absmag = absmag,
+        mag2 = mag2,
+        mag4 = mag4
+    )        
 end
 
 function measure(
     est::MagnetizationEstimator,
     op::OperCode,
-    ::AbstractVector{UInt8},
+    ::AbstractVector{StateIdx},
     sse_data::SSEData,
 )
     @fastmath if !isdiagonal(op)

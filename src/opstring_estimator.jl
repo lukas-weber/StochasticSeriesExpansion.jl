@@ -35,7 +35,7 @@ abstract type AbstractOpstringEstimator end
 Constructs an opstring estimator based on a `model` and an initial `state`. The `state` is a vector of integers labelling
 the computational site basis states. The estimator needs to interpret them in terms of physical quantities.
 """
-@stub init(est::AbstractOpstringEstimator, state::AbstractVector{<:StateIdx})
+@stubT init(est::Type{<:AbstractOpstringEstimator}, model::Model, state::AbstractVector{StateIdx}) where {Model}
 
 """
     measure(est, op::OperCode, state::AbstractVector{<:StateIdx}, sse_data::SSEData)

@@ -314,11 +314,7 @@ end
     estimator_types::Type{<:AbstractOpstringEstimator}...,
 ) where {Model}
     get_type(::Type{Type{T}}) where {T} = T
-    allocs = Expr(:tuple, (:($(get_type(type))(mc.model)) for type in estimator_types)...)
-    inits = Expr(
-        :block,
-        (:(init!(estimators[$i], mc.state)) for i = 1:length(estimator_types))...,
-    )
+    inits = Expr(:tuple, (:(init($(get_type(type)), mc.model, mc.state)) for type in estimator_types)...)
     measures = Expr(
         :block,
         (
@@ -332,8 +328,7 @@ end
     )
 
     return quote
-        estimators = $allocs
-        $inits
+        estimators = $inits
         n = zero(Int64)
         for op in mc.operators
             if isidentity(op)
