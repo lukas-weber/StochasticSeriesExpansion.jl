@@ -33,12 +33,33 @@ The array `vertex_data` contains one instance of [`VertexData`](@ref) for each d
 """
 function SSEData(
     vertex_data::AbstractVector{VertexData{NSites}},
-    sites::AbstractVector{SSESite},
     bonds::AbstractVector{SSEBond{NSites}},
 ) where {NSites}
     energy_offset = sum(b -> vertex_data[b.type].energy_offset, bonds)
 
+    sites = generate_sites_from_bonds(vertex_data, bonds)
     return SSEData(vertex_data, sites, bonds, energy_offset)
+end
+
+function generate_sites_from_bonds(
+    vertex_data::AbstractVector{<:VertexData},
+    bonds::AbstractVector{<:SSEBond},
+)
+    max_site = maximum(b -> maximum(b.sites), bonds)
+
+    sites = fill(SSESite(0), max_site)
+    for b in bonds, (is, s) in enumerate(b.sites)
+        new_dim = vertex_data[b.type].dims[is]
+        if sites[s].dim == 0
+            sites[s] = SSESite(new_dim)
+        elseif sites[s].dim != new_dim
+            error(
+                "SSEData: site dimensions set by VertexData are inconsistent!\nSite $s: $(sites[s].dim), Bond $(b.type): $new_dim",
+            )
+        end
+    end
+
+    return sites
 end
 
 """
