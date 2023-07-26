@@ -1,4 +1,4 @@
-using LoadLeveller
+using Carlo
 
 """
     AbstractOpstringEstimator
@@ -50,10 +50,10 @@ Perform the in-string measurement of estimator `est` on each operator `op` in th
 )
 
 """
-    result(est, ctx::LoadLeveller.MCContext, T::AbstractFloat, sign::AbstractFloat)
+    result(est, ctx::Carlo.MCContext, T::AbstractFloat, sign::AbstractFloat)
 
-Finalize the measurement by saving the results to the LoadLeveller `MCContext`, e.g. by calling
-`measure!(ctx, :Magnetization, est.mag)`. For more information, consult the LoadLeveller documentation.
+Finalize the measurement by saving the results to the Carlo `MCContext`, e.g. by calling
+`measure!(ctx, :Magnetization, est.mag)`. For more information, consult the Carlo documentation.
 
 For some observables, knowing the temperature `T` is necessary. In the case of a signful simulation, `sign != 1` should be taken into account.
 """
@@ -65,13 +65,13 @@ For some observables, knowing the temperature `T` is necessary. In the case of a
 )
 
 """
-    register_evaluables(::Type{<:AbstractOpstringEstimator}, eval::LoadLeveller.Evaluator, params::AbstractDict)
+    register_evaluables(::Type{<:AbstractOpstringEstimator}, eval::Carlo.Evaluator, params::AbstractDict)
 
 Operator string estimators `est` can define their own evaluables using this function, which passes a
-`LoadLeveller.Evaluator` and the task parameters. The state of the estimator is unavailable here since this runs in the postprocessing step.
+`Carlo.Evaluator` and the task parameters. The state of the estimator is unavailable here since this runs in the postprocessing step.
 """
 @stubT register_evaluables(
     est::Type{<:AbstractOpstringEstimator},
-    eval::LoadLeveller.Evaluator,
+    eval::Carlo.Evaluator,
     params::AbstractDict,
 )

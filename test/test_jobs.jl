@@ -1,5 +1,5 @@
-using LoadLeveller
-using LoadLeveller.JobTools
+using Carlo
+using Carlo.JobTools
 
 function testjob_magnet_square(sweeps::Integer, thermalization::Integer)
     tm = TaskMaker()

@@ -1,4 +1,4 @@
-using LoadLeveller.ResultTools
+using Carlo.ResultTools
 using Distributions
 using HypothesisTests
 using Measurements
@@ -9,7 +9,7 @@ include("test_jobs.jl")
 
 
 function run_mc(job::JobInfo)
-    LoadLeveller.start(LoadLeveller.SingleRunner{job.mc}, job)
+    Carlo.start(Carlo.SingleScheduler, job)
 
     return DataFrame(ResultTools.dataframe("$(job.dir)/../$(job.name).results.json"))
 end

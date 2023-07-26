@@ -1,4 +1,4 @@
-using LoadLeveller
+using Carlo
 using HDF5
 
 using Random
@@ -7,7 +7,7 @@ function mc(model::Type{<:AbstractModel})
     return MC{model,leg_count(model) ÷ 2}
 end
 
-Base.@kwdef mutable struct MC{Model<:AbstractModel,NSites} <: LoadLeveller.AbstractMC
+Base.@kwdef mutable struct MC{Model<:AbstractModel,NSites} <: Carlo.AbstractMC
     T::Float64 = 0.0
     opstring_estimators::Vector{Type}
 
@@ -41,7 +41,7 @@ function MC{Model,NSites}(params::AbstractDict) where {Model,NSites}
     )
 end
 
-function LoadLeveller.init!(mc::MC, ctx::LoadLeveller.MCContext, params::AbstractDict)
+function Carlo.init!(mc::MC, ctx::Carlo.MCContext, params::AbstractDict)
     mc.state = [rand(ctx.rng, StateIdx.(1:s.dim)) for s in mc.sse_data.sites]
 
     init_opstring_cutoff =
@@ -56,7 +56,7 @@ function LoadLeveller.init!(mc::MC, ctx::LoadLeveller.MCContext, params::Abstrac
     return nothing
 end
 
-function LoadLeveller.sweep!(mc::MC, ctx::LoadLeveller.MCContext)
+function Carlo.sweep!(mc::MC, ctx::Carlo.MCContext)
     diagonal_update(mc, ctx)
     make_vertex_list!(mc.vertex_list, mc.operators, mc.sse_data.bonds)
     worm_update(mc, ctx)
@@ -64,7 +64,7 @@ function LoadLeveller.sweep!(mc::MC, ctx::LoadLeveller.MCContext)
     return nothing
 end
 
-function LoadLeveller.measure!(mc::MC, ctx::LoadLeveller.MCContext)
+function Carlo.measure!(mc::MC, ctx::Carlo.MCContext)
     sign = measure_sign(mc.operators, mc.sse_data)
 
     measure!(ctx, :Sign, float(sign))
@@ -83,7 +83,7 @@ function LoadLeveller.measure!(mc::MC, ctx::LoadLeveller.MCContext)
     return nothing
 end
 
-function LoadLeveller.write_checkpoint(mc::MC, out::HDF5.Group)
+function Carlo.write_checkpoint(mc::MC, out::HDF5.Group)
     out["num_operators"] = mc.num_operators
     out["avg_worm_length"] = mc.avg_worm_length
     out["num_worms"] = mc.num_worms
@@ -93,7 +93,7 @@ function LoadLeveller.write_checkpoint(mc::MC, out::HDF5.Group)
     return nothing
 end
 
-function LoadLeveller.read_checkpoint(mc::MC, in::HDF5.Group)
+function Carlo.read_checkpoint(mc::MC, in::HDF5.Group)
     mc.num_operators = in["num_operators"]
     mc.avg_worm_length = in["avg_worm_length"]
     mc.num_worms = in["num_worms"]
@@ -105,9 +105,9 @@ end
 
 unsign(signobs, sign) = signobs ./ sign
 
-function LoadLeveller.register_evaluables(
+function Carlo.register_evaluables(
     ::Type{<:MC{Model}},
-    eval::LoadLeveller.Evaluator,
+    eval::Carlo.Evaluator,
     params::AbstractDict,
 ) where {Model}
 
@@ -132,10 +132,7 @@ function LoadLeveller.register_evaluables(
 end
 
 
-function diagonal_update(
-    mc::MC{Model,NSites},
-    ctx::LoadLeveller.MCContext,
-) where {Model,NSites}
+function diagonal_update(mc::MC{Model,NSites}, ctx::Carlo.MCContext) where {Model,NSites}
     if mc.num_operators >= length(mc.operators) * 0.5
         if is_thermalized(ctx)
             @warn "spin array resized after thermalization"
@@ -227,7 +224,7 @@ function worm_update(mc::MC, ctx::MCContext)
     return nothing
 end
 
-function worm_traverse!(mc::MC{Model}, ctx::LoadLeveller.MCContext) where {Model}
+function worm_traverse!(mc::MC{Model}, ctx::Carlo.MCContext) where {Model}
     if mc.num_operators == 0
         return 0
     end

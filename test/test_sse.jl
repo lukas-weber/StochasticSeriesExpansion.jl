@@ -1,5 +1,5 @@
-using LoadLeveller
-using LoadLeveller.JobTools
+using Carlo
+using Carlo.JobTools
 using Random
 
 function isconsistent(
@@ -83,13 +83,13 @@ end
 
     mc = S.mc(S.Models.Magnet)(params)
 
-    LoadLeveller.init!(mc, ctx, params)
+    Carlo.init!(mc, ctx, params)
 
     for s = 1:sweeps
         if !isconsistent(mc.operators, mc.state, mc.sse_data)
             break
         end
-        LoadLeveller.sweep!(mc, ctx)
+        Carlo.sweep!(mc, ctx)
     end
 
     @test isconsistent(mc.operators, mc.state, mc.sse_data)

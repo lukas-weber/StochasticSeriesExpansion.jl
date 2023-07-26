@@ -21,7 +21,7 @@ function bench_total()
         mktempdir() do dir
             job = generate_test_jobs(dir, 10000, 10000)["magnet_square"]
 
-            LoadLeveller.start(LoadLeveller.SingleRunner{job.mc}, job)
+            Carlo.start(Carlo.SingleScheduler, job)
         end
         return nothing
     end

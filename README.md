@@ -10,14 +10,14 @@ and
 
 Out of the box, it can simulate common quantum magnet Hamiltonians, but it can be easily extended to arbitrary models by providing a bond Hamiltonian matrix.
 
-It is built on the [LoadLeveller](https://github.com/lukas-weber/LoadLeveller.jl.git) framework.
+It is built on the [Carlo](https://github.com/lukas-weber/Carlo.jl.git) framework.
 
 ## Getting started
 
-To start, install LoadLeveller and StochasticSeriesExpansion in Julia
+To start, install Carlo and StochasticSeriesExpansion in Julia
 ```julia
 using Pkg
-Pkg.add("LoadLeveller")
+Pkg.add("Carlo")
 Pkg.add("StochasticSeriesExpansion")
 ```
 

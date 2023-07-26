@@ -5,7 +5,7 @@ export AbstractModel,
 export MagnetizationEstimator,
     all_magests, magnetization_state, magnetization_lattice_site_idx, magest_standard_prefix
 
-using LoadLeveller
+using Carlo
 
 include("util.jl")
 include("worms.jl")
