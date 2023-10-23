@@ -18,9 +18,9 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 Formatting = "0.4.2"
-HDF5 = "0.16.15"
+HDF5 = "0.17"
 HiGHS = "1.5.2"
-Carlo = "0.1.0"
+Carlo = "0.1.2"
 MathOptInterface = "1.17.1"
 Measurements = "2.9.0"
 PackageStates = "0.2.0"
