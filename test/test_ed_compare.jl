@@ -5,7 +5,6 @@ using Measurements
 
 include("ed/ed.jl")
 include("ed/magnet.jl")
-include("test_jobs.jl")
 
 
 function run_mc(job::JobInfo)
