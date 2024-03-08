@@ -1,7 +1,7 @@
 # StochasticSeriesExpansion
 [![Docs dev](https://img.shields.io/badge/docs-latest-blue.svg)](https://lukas.weber.science/StochasticSeriesExpansion.jl/dev/)
 [![Docs stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://lukas.weber.science/StochasticSeriesExpansion.jl/stable/)
-[![CI](https://github.com/lukas-weber/StochasticSeriesExpansion.jl/workflows/CI/badge.svg)](https://github.com/lukas-weber/StochasticSeriesExpansion.jl/actions)
+[![CI](https://github.com/lukas-weber/StochasticSeriesExpansion.jl/actions/workflows/main.yml/badge.svg)](https://github.com/lukas-weber/StochasticSeriesExpansion.jl/actions/workflows/main.yml)
 
 This is a state-of-the-art implementation of the stochastic series expansion quantum Monte Carlo (QMC) algorithm [[1]](#1) with abstract loop updates [[2]](#2), which allow
 the efficient simulation of many different bosonic lattice models in different computational bases using the same code.
