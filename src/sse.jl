@@ -314,7 +314,10 @@ end
     estimator_types::Type{<:AbstractOpstringEstimator}...,
 ) where {Model}
     get_type(::Type{Type{T}}) where {T} = T
-    inits = Expr(:tuple, (:(init($(get_type(type)), mc.model, mc.state)) for type in estimator_types)...)
+    inits = Expr(
+        :tuple,
+        (:(init($(get_type(type)), mc.model, mc.state)) for type in estimator_types)...,
+    )
     measures = Expr(
         :block,
         (

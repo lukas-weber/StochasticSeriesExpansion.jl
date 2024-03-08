@@ -92,7 +92,8 @@ function init(
 ) where {OrderingVector,StaggerUC,Model,Prefix,Dimension}
     tmpmag = @fastmath sum(
         site ->
-            staggered_sign(model.lattice, OrderingVector, StaggerUC, site) * magnetization_state(model, site, state[site]),
+            staggered_sign(model.lattice, OrderingVector, StaggerUC, site) *
+            magnetization_state(model, site, state[site]),
         1:site_count(model.lattice::Lattice{Dimension}),
     )
 
@@ -101,15 +102,15 @@ function init(
     mag2 = tmpmag^2
     mag4 = tmpmag^4
 
-    return MagnetizationEstimator{OrderingVector, StaggerUC, Model, Prefix,Dimension}(;
+    return MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}(;
         model = model,
         n = 1,
         tmpmag = tmpmag,
         mag = mag,
         absmag = absmag,
         mag2 = mag2,
-        mag4 = mag4
-    )        
+        mag4 = mag4,
+    )
 end
 
 function measure(
