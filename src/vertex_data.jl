@@ -1,6 +1,6 @@
 using HiGHS
 using LinearAlgebra
-using Formatting
+using Printf
 import MathOptInterface as MOI
 
 Base.@kwdef struct Transition
@@ -418,9 +418,7 @@ function Base.show(io::IO, vd::VertexData{NSites}) where {NSites}
     println(io, "VertexData(")
     println(io, "weights = $(vd.weights)")
     for v = 1:size(vd.transitions, 3)
-        println(
-            "vertex $(v): [$(join([format("{:d}", s) for s in vd.leg_states[:,v]], ","))]",
-        )
+        println("vertex $(v): [$(join(string.(vd.leg_states[:,v]), ","))]")
         for worm = 1:size(vd.transitions, 2)
             for leg_in = 1:size(vd.transitions, 1)
                 t = vd.transitions[leg_in, worm, v]
@@ -432,16 +430,19 @@ function Base.show(io::IO, vd::VertexData{NSites}) where {NSites}
                 targets = vd.transition_targets[t.offset:t.offset+t.length]
                 step_outs = vd.transition_step_outs[t.offset:t.offset+t.length]
 
-                printfmtln(
+                @printf(
                     io,
-                    "({},{}) {}| {}",
+                    "(%d,%d) %s | %s\n",
                     leg_in,
                     worm,
-                    join([format("{:2f}", p) for p in probs]),
-                    join([
-                        format("({},{},{:2d})", sout..., get_vertex_idx(tar)) for
-                        (sout, tar) in zip(step_outs, targets)
-                    ]),
+                    join([@sprintf("%.2f", p) for p in probs], " "),
+                    join(
+                        [
+                            @sprintf("(%d,%d,%d)", sout..., get_vertex_idx(tar)) for
+                            (sout, tar) in zip(step_outs, targets)
+                        ],
+                        " ",
+                    ),
                 )
             end
         end
