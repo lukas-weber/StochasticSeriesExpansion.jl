@@ -25,8 +25,6 @@ Pkg.add("Carlo")
 Pkg.add("StochasticSeriesExpansion")
 ```
 
-Next, follow the [tutorial](example/TUTORIAL.md) to see how to simulate a Heisenberg model with single-ion anisotropies.
-
 ## References
 <a id="1">[1]</a> A. W. Sandvik, Phys. Rev. B **59**, R14157(R) (1999)
 

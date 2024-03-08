@@ -5,12 +5,12 @@ An implementation of the stochastic series expansion (SSE) quantum Monte Carlo a
 ## Features
 
 * Run high-performance SSE simulations without being a QMC expert
-* Supports anisotropic spin-S quantum Magnets out of the box
+* Supports anisotropic spin-``S`` quantum Magnets out of the box
 * Extensible to arbitrary models (although mind the sign problem)
 
 ## Getting started
 
-Jump right into the [Tutorial](@ref tutorial)!
+Jump right into the Tutorial (TODO).
 
 ## Can I simulate my own model?
 
