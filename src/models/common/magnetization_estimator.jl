@@ -64,7 +64,7 @@ end
 
 This interface needs to be implemented by any model that wants to use `MagnetizationEstimator`. 
 """
-@stub magnetization_state(model::AbstractModel, site_idx::Integer, state_idx::Integer)
+function magnetization_state end
 
 """
     magnetization_lattice_site_idx(model::AbstractModel, sse_site_idx) -> Integer

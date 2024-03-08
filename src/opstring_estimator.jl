@@ -35,23 +35,14 @@ abstract type AbstractOpstringEstimator end
 Constructs an opstring estimator based on a `model` and an initial `state`. The `state` is a vector of integers labelling
 the computational site basis states. The estimator needs to interpret them in terms of physical quantities.
 """
-@stubT init(
-    est::Type{<:AbstractOpstringEstimator},
-    model::Model,
-    state::AbstractVector{StateIdx},
-) where {Model}
+function init end
 
 """
     measure(est, op::OperCode, state::AbstractVector{<:StateIdx}, sse_data::SSEData)
 
 Perform the in-string measurement of estimator `est` on each operator `op` in the operator string. The `state` at the current position and the `sse_data` object are passed for additional reference.
 """
-@stub measure(
-    est::AbstractOpstringEstimator,
-    op::OperCode,
-    state::AbstractVector{<:StateIdx},
-    sse_data::SSEData,
-)
+function measure end
 
 """
     result(est, ctx::Carlo.MCContext, T::AbstractFloat, sign::AbstractFloat)
@@ -61,12 +52,7 @@ Finalize the measurement by saving the results to the Carlo `MCContext`, e.g. by
 
 For some observables, knowing the temperature `T` is necessary. In the case of a signful simulation, `sign != 1` should be taken into account.
 """
-@stub result(
-    est::AbstractOpstringEstimator,
-    ctx::MCContext,
-    T::AbstractFloat,
-    sign::AbstractFloat,
-)
+function result end
 
 """
     register_evaluables(::Type{<:AbstractOpstringEstimator}, eval::Carlo.Evaluator, params::AbstractDict)
@@ -74,8 +60,4 @@ For some observables, knowing the temperature `T` is necessary. In the case of a
 Operator string estimators `est` can define their own evaluables using this function, which passes a
 `Carlo.Evaluator` and the task parameters. The state of the estimator is unavailable here since this runs in the postprocessing step.
 """
-@stubT register_evaluables(
-    est::Type{<:AbstractOpstringEstimator},
-    eval::Carlo.Evaluator,
-    params::AbstractDict,
-)
+function register_evaluables end

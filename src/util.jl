@@ -1,21 +1,5 @@
 using StaticArrays
 
-macro stub(func::Expr)
-    funcname = string(func.args[1])
-    return :($func = (typename = string(typeof($(func.args[2].args[1])));
-    error($funcname * " interface not implemented for type " * typename)))
-end
-
-macro stubT(func::Expr)
-    func_inner = func
-    if func.head == :where
-        func_inner = func.args[1]
-    end
-    funcname = string(only(func_inner.args[2].args[2].args[2].args))
-    return :($func = (typename = string(typeof($(func_inner.args[2].args[1])));
-    error($funcname * " interface not implemented for type " * typename)))
-end
-
 function split_idx(dims::NTuple{D,<:Integer}, idx::Integer) where {D}
     idx -= 1
 
