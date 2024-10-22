@@ -24,7 +24,7 @@ struct VertexData{NSites}
     transition_targets::Vector{VertexCode}
     transition_step_outs::Vector{Tuple{Int,Int}} # [leg, worm]
 
-    leg_states::Matrix{StateIdx} # [leg, vertex]
+    leg_states::Matrix{StateIndex} # [leg, vertex]
 end
 
 """
@@ -106,7 +106,7 @@ function scatter(
     vd::VertexData{NSites},
     v::VertexCode,
     leg_in::Integer,
-    worm_in::WormIdx,
+    worm_in::WormIndex,
     random::AbstractFloat,
 ) where {NSites}
     vi = get_vertex_idx(v)
@@ -141,7 +141,7 @@ function construct_vertices(
 ) where {NSites}
     diagonal_vertices = fill(VertexCode(nothing), size(bond_hamiltonian, 1))
     weights = Vector{eltype(bond_hamiltonian)}()
-    leg_states = StateIdx[]
+    leg_states = StateIndex[]
     signs = Int8[]
 
     for (i, j) in Tuple.(CartesianIndices(bond_hamiltonian))
@@ -168,7 +168,7 @@ function construct_vertices(
 end
 
 function wrap_vertex_idx(
-    leg_states::AbstractMatrix{StateIdx},
+    leg_states::AbstractMatrix{StateIndex},
     vertex_idx::Union{<:Integer,Nothing},
 )
     if vertex_idx === nothing
@@ -189,7 +189,7 @@ end
 site_of_leg(leg::Integer, num_sites::Integer) = leg > num_sites ? leg - num_sites : leg
 
 function vertex_apply_change(
-    leg_states::AbstractMatrix{StateIdx},
+    leg_states::AbstractMatrix{StateIndex},
     dims::NTuple{NSites,<:Integer},
     vertex::Integer,
     step_in::Tuple,
@@ -211,7 +211,7 @@ end
 
 function construct_transitions(
     weights::AbstractArray{<:AbstractFloat},
-    leg_states::AbstractMatrix{StateIdx},
+    leg_states::AbstractMatrix{StateIndex},
     max_worm_count::Integer,
     dims::NTuple{NSites,<:Integer},
     tolerance::AbstractFloat,

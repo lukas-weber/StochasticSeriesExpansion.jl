@@ -32,7 +32,7 @@ abstract type AbstractOpstringEstimator end
 """
     init(::Type{YourOpstringEstimator},
          model::AbstractModel,
-         state::AbstractVector{<:StateIdx}) -> YourOpstringEstimator
+         state::AbstractVector{<:StateIndex}) -> YourOpstringEstimator
 
 Constructs an opstring estimator based on a `model` and an initial `state`. The `state` is a vector of integers labelling
 the computational site basis states. The estimator needs to interpret them in terms of physical quantities.
@@ -40,7 +40,7 @@ the computational site basis states. The estimator needs to interpret them in te
 function init end
 
 """
-    measure(est, op::OperCode, state::AbstractVector{<:StateIdx}, sse_data::SSEData)
+    measure(est, op::OperCode, state::AbstractVector{<:StateIndex}, sse_data::SSEData)
 
 Perform the in-string measurement of estimator `est` on each operator `op` in the operator string. The `state` at the current position and the `sse_data` object are passed for additional reference.
 """

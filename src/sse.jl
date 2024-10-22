@@ -18,7 +18,7 @@ Base.@kwdef mutable struct MC{Model<:AbstractModel,NSites} <: Carlo.AbstractMC
     num_operators::Int64 = 0.0
 
     operators::Vector{OperCode}
-    state::Vector{StateIdx}
+    state::Vector{StateIndex}
 
     model::Model
     sse_data::SSEData{NSites}
@@ -33,7 +33,7 @@ function MC{Model,NSites}(params::AbstractDict) where {Model,NSites}
         vertex_list = VertexList{leg_count(Model) ÷ 2}(length(sse_data.sites)),
         opstring_estimators = get_opstring_estimators(model),
         operators = OperCode[],
-        state = StateIdx[],
+        state = StateIndex[],
         T = params[:T],
         target_worm_length_fraction = get(params, :target_worm_length_fraction, 2.0),
         model = model,
@@ -42,7 +42,7 @@ function MC{Model,NSites}(params::AbstractDict) where {Model,NSites}
 end
 
 function Carlo.init!(mc::MC, ctx::Carlo.MCContext, params::AbstractDict)
-    mc.state = [rand(ctx.rng, StateIdx.(1:s.dim)) for s in mc.sse_data.sites]
+    mc.state = [rand(ctx.rng, StateIndex.(1:s.dim)) for s in mc.sse_data.sites]
 
     init_opstring_cutoff =
         get(params, :init_opstring_cutoff, round(Int, length(mc.sse_data.sites) * mc.T))

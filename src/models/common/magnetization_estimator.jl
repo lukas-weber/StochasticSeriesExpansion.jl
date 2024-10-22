@@ -96,7 +96,7 @@ end
 function init(
     ::Type{MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}},
     model::Model,
-    state::AbstractVector{StateIdx},
+    state::AbstractVector{StateIndex},
 ) where {OrderingVector,StaggerUC,Model,Prefix,Dimension}
     tmpmag = @fastmath sum(
         site ->
@@ -124,7 +124,7 @@ end
 function measure(
     est::MagnetizationEstimator,
     op::OperCode,
-    ::AbstractVector{StateIdx},
+    ::AbstractVector{StateIndex},
     sse_data::SSEData,
 )
     @fastmath if !isdiagonal(op)
