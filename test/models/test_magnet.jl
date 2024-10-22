@@ -14,7 +14,7 @@
 
     @test length(m.site_params) == L^2
     @test length(m.bond_params) == 2 * L^2
-    @test m.bond_params[1].hz ≈ hz / 4
+    @test all(m.bond_params[1].hz .≈ (hz / 4, hz / 4))
 
     m = S.Models.Magnet(
         Dict(:unitcell => S.UnitCells.square, :Lx => L, :Ly => 2 * L, :J => 1.0, :hz => hz),
@@ -22,7 +22,7 @@
 
     @test length(m.site_params) == 2 * L^2
     @test length(m.bond_params) == 4 * L^2
-    @test m.bond_params[1].hz ≈ hz / 4
+    @test all(m.bond_params[1].hz .≈ (hz / 4, hz / 4))
 
     Jx = 1.0
     Jy = 2.0

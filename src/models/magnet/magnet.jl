@@ -8,9 +8,9 @@ struct MagnetBondParams{F<:AbstractFloat}
     J::F
     d::F
 
-    Dx::F
-    Dz::F
-    hz::F
+    Dx::Tuple{F,F}
+    Dz::Tuple{F,F}
+    hz::Tuple{F,F}
 end
 
 struct MagnetSiteParams
@@ -76,7 +76,7 @@ function Magnet(params::AbstractDict{Symbol,<:Any})
         second =
             get(params, pm(:sites, juc, param), default) / lat.uc.sites[juc].coordination
 
-        return (first + second) / 2
+        return first, second
     end
 
     full_bond_params = [
@@ -113,21 +113,24 @@ function generate_vertex_data(mag::Magnet, uc_bond, bond::MagnetBondParams)
 
     splusi, szi = S.spin_operators(Float64, dimi)
     splusj, szj = S.spin_operators(Float64, dimj)
-    idi = diagm(ones(Float64, dimi))
-    idj = diagm(ones(Float64, dimj))
+    idi = Matrix{Float64}(I, dimi, dimi)
+    idj = Matrix{Float64}(I, dimj, dimj)
 
     H =
         bond.J * (
             0.5 * (kron(splusi', splusj) + kron(splusi, splusj')) +
             (1 + bond.d) * kron(szi, szj)
         ) +
-        bond.hz * (kron(idi, szj) + kron(szi, idj)) +
-        bond.Dx / 4 * (kron((splusi + splusi')^2, idj) + kron(idi, (splusj + splusj')^2)) +
-        bond.Dz * (kron(szi^2, idj) + kron(idi, szj^2))
+        bond.hz[1] * kron(idi, szj) +
+        bond.hz[2] * kron(szi, idj) +
+        bond.Dx[1] / 4 * kron((splusi + splusi')^2, idj) +
+        bond.Dx[2] / 4 * kron(idi, (splusj + splusj')^2) +
+        bond.Dz[1] * kron(szi^2, idj) +
+        bond.Dz[2] * kron(idi, szj^2)
 
     energy_offset_factor = 0.25
     # use the deterministic solution for S == 1//2
-    if dimi == dimj == 2 && bond.hz == 0
+    if dimi == dimj == 2 && bond.hz == 0 && bond.Dz == 0 && bond.Dx == 0
         energy_offset_factor = 0.0
     end
 

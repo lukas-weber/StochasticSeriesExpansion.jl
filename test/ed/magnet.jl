@@ -13,9 +13,12 @@ function hamiltonian(magnet::S.Models.Magnet)
             H +=
                 params.J * heisen_bond(lifter, bond.i, bond.j) +
                 params.d * spin(lifter, bond.i, 3) * spin(lifter, bond.j, 3) +
-                params.hz * (spin(lifter, bond.i, 3) + spin(lifter, bond.j, 3))
-            +params.Dx * (spin(lifter, bond.i, 1)^2 + spin(lifter, bond.j, 1)^2) +
-            params.Dz * (spin(lifter, bond.i, 1)^2 + spin(lifter, bond.j, 3)^2)
+                params.hz[1] * spin(lifter, bond.i, 3) +
+                params.hz[2] * spin(lifter, bond.j, 3) +
+                params.Dx[1] * spin(lifter, bond.i, 1)^2 +
+                params.Dx[2] * spin(lifter, bond.j, 1)^2 +
+                params.Dz[1] * spin(lifter, bond.i, 3)^2 +
+                params.Dz[2] * spin(lifter, bond.j, 3)^2
         end
         return H
     end
