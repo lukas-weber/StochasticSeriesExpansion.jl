@@ -13,7 +13,7 @@ function testjob_magnet_square(sweeps::Integer, thermalization::Integer)
     tm.Lx = 2
     tm.Ly = 4
 
-    tm.measure = S.all_magests(S.Models.Magnet, S.dimension(tm.unitcell))
+    tm.measure = S.all_magnetization_estimators(S.Models.Magnet, S.dimension(tm.unitcell))
 
     tm.J = 1.23
     tm.hz = -0.2
@@ -44,7 +44,7 @@ function testjob_honeycomb(sweeps::Integer, thermalization::Integer)
         :bonds => [Dict(:J => :J1), Dict(:J => :J2), Dict(:J => :J3)],
     )
 
-    tm.measure = S.all_magests(S.Models.Magnet, S.dimension(tm.unitcell))
+    tm.measure = S.all_magnetization_estimators(S.Models.Magnet, S.dimension(tm.unitcell))
 
     tm.J1 = 1.0
     tm.J2 = 1.0

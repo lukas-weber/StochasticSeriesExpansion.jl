@@ -56,7 +56,7 @@ function calc_magnetization!(
             return M
         end ./ S.normalization_site_count(magnet)
 
-    symbols, _ = S.magest_obs_symbols(prefix)
+    symbols, _ = S.magnetization_estimator_obs_symbols(prefix)
 
     obs[symbols.mag] = mean(ens, M)
     m2 = mean(ens, M^2)

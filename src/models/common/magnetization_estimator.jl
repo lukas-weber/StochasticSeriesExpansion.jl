@@ -22,7 +22,7 @@ Here, ``m = \frac{1}{N} \sum_i m_i`` where ``m_i`` is given by [`magnetization_s
 * `OrderingVector`: Fourier component to compute in units of π. For example ``(1,1)`` corresponds to ``(π,π)``
 * If `StaggerUC` is true, the sublattice sign of the unitcell is additionally taken into account
 * `Model`: model type to apply this estimator on
-* `Prefix`: (Symbol) this prefix is added to all observable names. Consider [`magest_standard_prefix`](@ref)."""
+* `Prefix`: (Symbol) this prefix is added to all observable names. Consider [`magnetization_estimator_standard_prefix`](@ref)."""
 Base.@kwdef mutable struct MagnetizationEstimator{
     OrderingVector,
     StaggerUC,
@@ -42,17 +42,17 @@ Base.@kwdef mutable struct MagnetizationEstimator{
 end
 
 """
-    all_magests(model::AbstractModel, dimension)
+    all_magnetization_estimators(model::AbstractModel, dimension)
 
 Generates a list of all valid `MagnetizationEstimator` types for a given model. Useful if you want to measure them all.
 """
-function all_magests(model::Type{<:AbstractModel}, dimension::Integer)
+function all_magnetization_estimators(model::Type{<:AbstractModel}, dimension::Integer)
     return [
         MagnetizationEstimator{
             q,
             stagger_uc,
             model,
-            magest_standard_prefix(q, stagger_uc),
+            magnetization_estimator_standard_prefix(q, stagger_uc),
             dimension,
         } for stagger_uc in (false, true),
         q in Iterators.product(((false, true) for _ = 1:dimension)...)
@@ -149,11 +149,11 @@ function measure(
 end
 
 """
-    magest_standard_prefix(q::Tuple{Bool...}, stagger_uc::Bool)
+    magnetization_estimator_standard_prefix(q::Tuple{Bool...}, stagger_uc::Bool)
 
 Returns the conventional prefix for a magnetization estimator with ordering vector `q` and `stagger_uc` set.
 """
-function magest_standard_prefix(q::Tuple{Vararg{Bool}}, stagger_uc::Bool)
+function magnetization_estimator_standard_prefix(q::Tuple{Vararg{Bool}}, stagger_uc::Bool)
     if !any(q) && !stagger_uc
         return Symbol()
     end
@@ -164,15 +164,16 @@ function magest_standard_prefix(q::Tuple{Vararg{Bool}}, stagger_uc::Bool)
 end
 
 """
-    magest_obs_symbols(prefix::Symbol)
-    magest_obs_symbols(est::MagnetizationEstimator)
+    magnetization_estimator_obs_symbols(prefix::Symbol)
+    magnetization_estimator_obs_symbols(est::MagnetizationEstimator)
 
 Generates the symbols used for observable names by the `MagnetizationEstimator` based on `prefix`. Two named tuples are returned for the normal and sign-multiplied observables respectively.
 """
-magest_obs_symbols(est::MagnetizationEstimator) =
-    magest_obs_symbols(Val(get_prefix(typeof(est))))
-magest_obs_symbols(prefix::Symbol) = magest_obs_symbols(Val(prefix))
-@generated function magest_obs_symbols(::Val{prefix}) where {prefix}
+magnetization_estimator_obs_symbols(est::MagnetizationEstimator) =
+    magnetization_estimator_obs_symbols(Val(get_prefix(typeof(est))))
+magnetization_estimator_obs_symbols(prefix::Symbol) =
+    magnetization_estimator_obs_symbols(Val(prefix))
+@generated function magnetization_estimator_obs_symbols(::Val{prefix}) where {prefix}
     obsnames = ["Mag", "AbsMag", "Mag2", "Mag4", "MagChi", "BinderRatio"]
     obs = [Symbol.((lowercase(name), String(prefix) * name)) for name in obsnames]
     obssigned =
@@ -191,7 +192,7 @@ function result(
     T::AbstractFloat,
     sign::AbstractFloat,
 )
-    _, signsymbols = magest_obs_symbols(est)
+    _, signsymbols = magnetization_estimator_obs_symbols(est)
     norm = 1 / normalization_site_count(est.model)
     est.mag *= norm
     est.absmag *= norm
@@ -221,7 +222,7 @@ function register_evaluables(
     eval::Carlo.Evaluator,
     ::AbstractDict,
 )
-    symbols, signsymbols = magest_obs_symbols(get_prefix(est))
+    symbols, signsymbols = magnetization_estimator_obs_symbols(get_prefix(est))
 
     for obs in (:mag, :absmag, :mag2, :mag4, :magchi)
         evaluate!(unsign, eval, symbols[obs], (signsymbols[obs], :Sign))

@@ -16,5 +16,5 @@ some kind of magnetization.
 MagnetizationEstimator
 magnetization_state
 magnetization_lattice_site_idx
-magest_standard_prefix
+magnetization_estimator_standard_prefix
 ```

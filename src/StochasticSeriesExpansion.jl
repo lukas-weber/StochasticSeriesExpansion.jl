@@ -3,7 +3,10 @@ export AbstractModel,
     SSEData, AbstractOpstringEstimator, SSEBond, VertexData, get_vertex_data, get_leg_state
 
 export MagnetizationEstimator,
-    all_magests, magnetization_state, magnetization_lattice_site_idx, magest_standard_prefix
+    all_magnetization_estimators,
+    magnetization_state,
+    magnetization_lattice_site_idx,
+    magnetization_estimator_standard_prefix
 
 using Carlo
 
