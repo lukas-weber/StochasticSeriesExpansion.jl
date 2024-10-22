@@ -17,7 +17,7 @@ Apart from this, methods for the following functions should be implemented:
 abstract type AbstractModel end
 
 """
-    leg_count(model::Type{YourModel}) -> Int
+    leg_count(model::Type{YourModel}) -> Integer
 
 This function returns the *maximum* number of legs a bond operator can have in the model.
 
@@ -40,7 +40,7 @@ From this information an [`SSEData`](@ref) instance can be constructed and retur
 function generate_sse_data end
 
 """
-    normalization_site_count(model::YourModel) -> Int
+    normalization_site_count(model::YourModel) -> Integer
 
 The number of physical sites used for normalizing observables. It may differ from the SSE algorithmic site count sometimes, e.g. when the computational basis consists of multiple physical spins but we still want the energy to be measured per spin.
 """

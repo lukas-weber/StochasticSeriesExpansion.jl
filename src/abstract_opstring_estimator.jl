@@ -57,7 +57,11 @@ For some observables, knowing the temperature `T` is necessary. In the case of a
 function result end
 
 """
-    register_evaluables(::Type{<:YourOpstringEstimator}, eval::Carlo.Evaluator, params::AbstractDict)
+    register_evaluables(
+        ::Type{<:YourOpstringEstimator},
+        eval::Carlo.Evaluator,
+        params::AbstractDict
+    )
 
 Operator string estimators `est` can define their own evaluables using this function, which passes a
 `Carlo.Evaluator` and the task parameters. The state of the estimator is unavailable here since this runs in the postprocessing step.
