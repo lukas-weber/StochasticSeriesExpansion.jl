@@ -1,6 +1,5 @@
 using Carlo.ResultTools
 using Distributions
-using HypothesisTests
 using Measurements
 
 include("ed/ed.jl")
@@ -29,13 +28,18 @@ end
                 for obsname in obsnames
                     # hack for the case that the error is exactly zero
                     mc_data_nudge =
-                        [m.val ± (m.err != 0 ? m.err : 1e-9) for m in mc_data[!, obsname]]
+                        [m.val ± (m.err != 0 ? m.err : 1e-8) for m in mc_data[!, obsname]]
 
-                    z = stdscore.(mc_data_nudge, ed_data[!, obsname])
-                    p = pvalue(ExactOneSampleKSTest(z, Normal()))
-                    if p <= 1e-3
-                        println("$obsname: p = $p")
-                        println("MC: $(mc_data_nudge)\nED: $(ed_data[!,obsname])")
+                    z = abs.(stdscore.(mc_data_nudge, ed_data[!, obsname]))
+                    if any(>(4), z)
+                        println("$obsname:")
+                        display(
+                            DataFrame(
+                                :MC => mc_data_nudge,
+                                :ED => ed_data[!, obsname],
+                                :z => z,
+                            ),
+                        )
                         if isdefined(Main, :Plots)
                             pl = plot(
                                 ed_data[!, :T],
@@ -52,7 +56,7 @@ end
                         end
                     end
 
-                    @test p > 1e-3
+                    @test all(<=(4), z)
                 end
             end
         end

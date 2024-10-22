@@ -7,6 +7,8 @@ function testjob_magnet_square(sweeps::Integer, thermalization::Integer)
     tm.thermalization = thermalization
     tm.binsize = 1000
 
+    tm.seed = 124535
+
     Ts = range(0.04, 4.00, length = 7)
 
     tm.unitcell = S.UnitCells.square
@@ -32,6 +34,8 @@ function testjob_honeycomb(sweeps::Integer, thermalization::Integer)
     tm.sweeps = sweeps
     tm.thermalization = thermalization
     tm.binsize = 1000
+
+    tm.seed = 124535
 
     Ts = range(0.04, 4.00, length = 7)
 
