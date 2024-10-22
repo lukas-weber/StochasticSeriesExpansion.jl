@@ -51,10 +51,10 @@ function testjob_honeycomb(sweeps::Integer, thermalization::Integer)
     tm.measure = S.all_magnetization_estimators(S.Models.Magnet, S.dimension(tm.unitcell))
 
     tm.J1 = 1.0
-    tm.J2 = 1.0
+    tm.J2 = 0.5
     tm.J3 = 1.0
-    # tm.Dz = 0.2
-    # tm.Dx = 0.5
+    tm.Dz = 0.2
+    tm.Dx = 0.5
 
     tm.Sa = 1 // 2
     tm.Sb = 1
