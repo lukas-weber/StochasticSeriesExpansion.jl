@@ -1,9 +1,14 @@
 @doc raw"""
-    MagnetizationEstimator{OrderingVector, StaggerUC, Model, Prefix, Dimension} <: AbstractOpstringEstimator
+    MagnetizationEstimator{
+        OrderingVector,
+        StaggerUC,
+        Model,
+        Prefix,
+        Dimension} <: AbstractOpstringEstimator
 
 Generic operator string estimator that can be used for all models that have
 
-* a field `lattice::Lattice`
+* a field `lattice::Lattice{Dimension}`
 * implement [`magnetization_state`](@ref).
 
 optionally, [`magnetization_lattice_site_idx`](@ref).
@@ -16,13 +21,16 @@ It computes the
 * `:MagChi`, susceptibility ``N \int_0^\beta d\tau \langle m(\tau) m\rangle``
 * `:BinderRatio`, Binder ratio ``\langle m^2\rangle^2/\langle m^4\rangle``
 
-Here, ``m = \frac{1}{N} \sum_i m_i`` where ``m_i`` is given by [`magnetization_state`](@ref) and ``N`` is given by [`StochasticSeriesExpansion.normalization_site_count`](@ref).
+Here, ``m = \frac{1}{N} \sum_i m_i``,the ``m_i`` are given by [`magnetization_state`](@ref) and ``N`` is returned by [`normalization_site_count`](@ref).
+
 ## Type parameters
 
 * `OrderingVector`: Fourier component to compute in units of π. For example ``(1,1)`` corresponds to ``(π,π)``
-* If `StaggerUC` is true, the sublattice sign of the unitcell is additionally taken into account
-* `Model`: model type to apply this estimator on
-* `Prefix`: (Symbol) this prefix is added to all observable names. Consider [`magnetization_estimator_standard_prefix`](@ref)."""
+* If `StaggerUC` is true, the sublattice sign of the unitcell is additionally taken into account.
+* `Model`: model type to apply this estimator to.
+* `Prefix`: (Symbol) this prefix is added to all observable names. Consider using [`magnetization_estimator_standard_prefix`](@ref).
+* `Dimension`: dimension of the underlying lattice.
+"""
 Base.@kwdef mutable struct MagnetizationEstimator{
     OrderingVector,
     StaggerUC,

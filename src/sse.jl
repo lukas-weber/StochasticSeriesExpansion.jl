@@ -307,6 +307,11 @@ function measure_sign(operators::AbstractVector{<:OperCode}, data::SSEData)
     return Bool(sign & 1) ? -1.0 : 1.0
 end
 
+"""
+    measure_opstring!
+
+This generated function fuses multiple SSE estimators that have to loop over the operator string into a single loop.
+"""
 @generated function measure_opstring!(
     mc::MC{Model},
     ctx::MCContext,

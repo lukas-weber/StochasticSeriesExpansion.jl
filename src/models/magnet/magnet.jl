@@ -165,7 +165,7 @@ function gen_opstring_estimators(lattice::S.Lattice, params::AbstractDict)
             end
             q, stagger_uc = neel
             push!(ests, S.MagnetizationEstimator{q,stagger_uc,Magnet,:Stag})
-        elseif est <: S.MagnetizationEstimator
+        elseif est <: S.AbstractOpstringEstimator
             push!(ests, est)
         else
             error("Unrecognized measure option '$est'")
