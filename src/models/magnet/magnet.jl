@@ -27,7 +27,7 @@ end
 
 ``H = \\sum_{ij} J_ij S_i\\cdotS_j + d_ij S_i^z S_j^z``
 """
-struct Magnet <: AbstractModel
+struct MagnetModel <: AbstractModel
     lattice::Lattice
 
     bond_params::Vector{MagnetBondParams}
@@ -60,7 +60,7 @@ function map(parameter_map::ParameterMap, path...)::Symbol
     return res
 end
 
-function Magnet(params::AbstractDict{Symbol,<:Any})
+function MagnetModel(params::AbstractDict{Symbol,<:Any})
     Lx = params[:Lx]
     Ly = get(params, :Ly, Lx)
     lat = Lattice(params[:unitcell], (Lx, Ly))
@@ -103,16 +103,16 @@ function Magnet(params::AbstractDict{Symbol,<:Any})
     )
 
     opstring_ests = gen_opstring_estimators(lat, params)
-    return Magnet(lat, full_bond_params, full_site_params, opstring_ests)
+    return MagnetModel(lat, full_bond_params, full_site_params, opstring_ests)
 end
 
-function magnetization_state(mag::Magnet, site_idx::Integer, state_idx::Integer)
+function magnetization_state(mag::MagnetModel, site_idx::Integer, state_idx::Integer)
     return @fastmath (mag.site_params[site_idx].spin_states - 1) * 0.5 - state_idx + 1
 end
 
-normalization_site_count(mag::Magnet) = site_count(mag.lattice)
+normalization_site_count(mag::MagnetModel) = site_count(mag.lattice)
 
-function generate_vertex_data(mag::Magnet, uc_bond, bond::MagnetBondParams)
+function generate_vertex_data(mag::MagnetModel, uc_bond, bond::MagnetBondParams)
     dimi = mag.site_params[uc_bond.iuc].spin_states
     dimj = mag.site_params[uc_bond.juc].spin_states
 
@@ -142,9 +142,9 @@ function generate_vertex_data(mag::Magnet, uc_bond, bond::MagnetBondParams)
     return VertexData((dimi, dimj), H; energy_offset_factor = energy_offset_factor)
 end
 
-leg_count(::Type{Magnet}) = 4
+leg_count(::Type{MagnetModel}) = 4
 
-function generate_sse_data(mag::Magnet)
+function generate_sse_data(mag::MagnetModel)
     vertex_data = [
         generate_vertex_data(mag, uc_bond, bond) for
         (uc_bond, bond) in zip(mag.lattice.uc.bonds, mag.bond_params)
@@ -160,7 +160,7 @@ function gen_opstring_estimators(lattice::Lattice, params::AbstractDict)
     for est in get(params, :measure, [])
         if est == :magnetization
             q = ntuple(i -> false, dimension(lattice))
-            push!(ests, MagnetizationEstimator{q,false,Magnet,Symbol()})
+            push!(ests, MagnetizationEstimator{q,false,MagnetModel,Symbol()})
         elseif est == :staggered_magnetization
             neel = neel_vector(lattice.uc)
             if neel === nothing
@@ -169,7 +169,7 @@ function gen_opstring_estimators(lattice::Lattice, params::AbstractDict)
                 )
             end
             q, stagger_uc = neel
-            push!(ests, MagnetizationEstimator{q,stagger_uc,Magnet,:Stag})
+            push!(ests, MagnetizationEstimator{q,stagger_uc,MagnetModel,:Stag})
         elseif est <: AbstractOpstringEstimator
             push!(ests, est)
         else
@@ -180,4 +180,4 @@ function gen_opstring_estimators(lattice::Lattice, params::AbstractDict)
     return ests
 end
 
-get_opstring_estimators(mag::Magnet) = mag.opstring_estimators
+get_opstring_estimators(mag::MagnetModel) = mag.opstring_estimators
