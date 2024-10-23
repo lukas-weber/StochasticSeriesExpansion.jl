@@ -1,4 +1,4 @@
-function make_operator(func, magnet::S.Models.Magnet)
+function make_operator(func, magnet::S.Magnet)
     dims = [site.spin_states for site in magnet.site_params]
 
     lifter = Lifter(dims)
@@ -7,7 +7,7 @@ function make_operator(func, magnet::S.Models.Magnet)
     return op
 end
 
-function hamiltonian(magnet::S.Models.Magnet)
+function hamiltonian(magnet::S.Magnet)
     return make_operator(magnet) do H, lifter
         for (bond, params) in zip(magnet.lattice.bonds, magnet.bond_params)
             H +=
@@ -26,7 +26,7 @@ end
 
 function calc_magnetization!(
     obs::AbstractDict{Symbol,<:Any},
-    magnet::S.Models.Magnet,
+    magnet::S.Magnet,
     ens::Ensemble,
     ::Type{S.MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}},
 ) where {OrderingVector,StaggerUC,Model,Prefix,Dimension}
@@ -42,7 +42,7 @@ end
 
 function calc_magnetization!(
     obs::AbstractDict{Symbol,<:Any},
-    magnet::S.Models.Magnet,
+    magnet::S.Magnet,
     ens::Ensemble;
     ordering_vector::Tuple,
     stagger_uc::Bool,
@@ -75,11 +75,7 @@ function calc_magnetization!(
     return nothing
 end
 
-function calc_observables!(
-    obs::AbstractDict{Symbol,<:Any},
-    magnet::S.Models.Magnet,
-    ens::Ensemble,
-)
+function calc_observables!(obs::AbstractDict{Symbol,<:Any}, magnet::S.Magnet, ens::Ensemble)
     for est in S.get_opstring_estimators(magnet)
         calc_magnetization!(obs, magnet, ens, est)
     end

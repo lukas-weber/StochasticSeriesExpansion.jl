@@ -37,9 +37,9 @@ This object holds the probability tables used for a bond in the abstract loop up
 
 `bond_hamiltonian` is the `prod(dims)`×`prod(dims)` matrix describing the bond Hamiltonian in the computational basis. The representation of the product Hilbert space follows the convention of `LinearAlgebra.kron`, so that if you have site-local operators `op1`, `op2`, `kron(op1, op2)` will give you a correct bond Hamiltonian.
 
-A constant is added to the bond hamiltonian so that its smallest diagonal element is
+A constant ``ε`` is added to the bond hamiltonian so that its smallest diagonal element is
 ```math
-\\min_i(h_{ii}) = \\alpha \\times [\\max_i (h_{ii}) - \\min_i (h_{ii})] \\ge 0,
+\\min_i(h_{ii}+ε) = \\alpha \\times [\\max_i (h_{ii}) - \\min_i (h_{ii})] \\ge 0,
 ```
 where ``\\alpha`` is given by the parameter `energy_offset_factor`.
 

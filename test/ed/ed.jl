@@ -99,7 +99,7 @@ function integrated_correlator(
     ]
 end
 
-@struct_equal S.Models.Magnet
+@struct_equal S.Magnet
 
 function summarize_tasks(job::JobInfo)
     summarized_tasks = Tuple{Vector{String},Vector{Float64},Dict{Symbol,Any}}[]

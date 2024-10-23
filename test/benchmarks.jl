@@ -5,7 +5,7 @@ include("test_jobs.jl")
 function bench_vertex_list()
     job = generate_test_jobs("", 10000, 10000)["magnet_square"]
 
-    mag = S.Models.Magnet(job.tasks[1].params)
+    mag = S.Magnet(job.tasks[1].params)
 
     sse_data = S.generate_sse_data(mag)
 

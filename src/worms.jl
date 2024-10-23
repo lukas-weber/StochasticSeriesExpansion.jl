@@ -1,5 +1,5 @@
 const WormIndex = Int
-const StateIndex= UInt8
+const StateIndex = UInt8
 
 worm_action(worm::Integer, state::Integer, basis_size::Integer) =
     (state + worm - 1) % basis_size + 1

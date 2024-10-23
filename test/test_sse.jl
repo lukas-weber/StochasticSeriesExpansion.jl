@@ -38,9 +38,9 @@ end
         :S => 1 // 2,
     )
 
-    sse_data = S.generate_sse_data(S.Models.Magnet(params))
+    sse_data = S.generate_sse_data(S.Magnet(params))
 
-    vl = S.VertexList{S.leg_count(S.Models.Magnet) ÷ 2}(length(sse_data.sites))
+    vl = S.VertexList{S.leg_count(S.Magnet) ÷ 2}(length(sse_data.sites))
     operatorss = [
         [S.OperCode(1, S.get_vertex_data(sse_data, 1).diagonal_vertices[3])],
         [S.OperCode(1, S.VertexCode(true, 1)), S.OperCode(1, S.VertexCode(true, 1))],
@@ -81,7 +81,7 @@ end
 
     ctx = MCContext{Random.Xoshiro}(params)
 
-    mc = S.mc(S.Models.Magnet)(params)
+    mc = S.mc(S.Magnet)(params)
 
     Carlo.init!(mc, ctx, params)
 

@@ -1,7 +1,7 @@
 @testset "Magnet" begin
     L = 5
     hz = 0.3
-    m = S.Models.Magnet(
+    m = S.Magnet(
         Dict(
             :unitcell => S.UnitCells.square,
             :Lx => L,
@@ -16,7 +16,7 @@
     @test length(m.bond_params) == 2 * L^2
     @test all(m.bond_params[1].hz .≈ (hz / 4, hz / 4))
 
-    m = S.Models.Magnet(
+    m = S.Magnet(
         Dict(:unitcell => S.UnitCells.square, :Lx => L, :Ly => 2 * L, :J => 1.0, :hz => hz),
     )
 
@@ -26,7 +26,7 @@
 
     Jx = 1.0
     Jy = 2.0
-    m = S.Models.Magnet(
+    m = S.Magnet(
         Dict(
             :unitcell => S.UnitCells.square,
             :parameter_map =>
@@ -42,7 +42,7 @@
     @test m.bond_params[1].J ≈ Jx
     @test m.bond_params[2].J ≈ Jy
 
-    @test_throws KeyError S.Models.Magnet(
+    @test_throws KeyError S.Magnet(
         Dict(
             :unitcell => S.UnitCells.square,
             :parameter_map =>
