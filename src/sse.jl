@@ -3,19 +3,15 @@ using HDF5
 
 using Random
 
-function mc(model::Type{<:AbstractModel})
-    return MC{model,leg_count(model) ÷ 2}
-end
-
-Base.@kwdef mutable struct MC{Model<:AbstractModel,NSites} <: Carlo.AbstractMC
-    T::Float64 = 0.0
+mutable struct MC{Model<:AbstractModel,NSites} <: AbstractMC
+    T::Float64
     opstring_estimators::Vector{Type}
 
     target_worm_length_fraction::Float64
-    avg_worm_length::Float64 = 1.0
-    num_worms::Float64 = 5.0
+    avg_worm_length::Float64
+    num_worms::Float64
 
-    num_operators::Int64 = 0.0
+    num_operators::Int64
 
     operators::Vector{OperCode}
     state::Vector{StateIndex}
@@ -26,22 +22,27 @@ Base.@kwdef mutable struct MC{Model<:AbstractModel,NSites} <: Carlo.AbstractMC
     vertex_list::VertexList{NSites}
 end
 
-function MC{Model,NSites}(params::AbstractDict) where {Model,NSites}
-    model = Model(params)
+function MC(params::AbstractDict)
+    model = params[:model](params)
     sse_data = generate_sse_data(model)
-    return MC{Model,NSites}(
-        vertex_list = VertexList{leg_count(Model) ÷ 2}(length(sse_data.sites)),
-        opstring_estimators = get_opstring_estimators(model),
-        operators = OperCode[],
-        state = StateIndex[],
-        T = params[:T],
-        target_worm_length_fraction = get(params, :target_worm_length_fraction, 2.0),
-        model = model,
-        sse_data = sse_data,
+
+    nsites = leg_count(typeof(model)) ÷ 2
+    return MC{typeof(model),nsites}(
+        params[:T],
+        get_opstring_estimators(model),
+        get(params, :target_worm_length_fraction, 2.0),
+        1.0,
+        5.0,
+        0,
+        OperCode[],
+        StateIndex[],
+        model,
+        sse_data,
+        VertexList{nsites}(length(sse_data.sites)),
     )
 end
 
-function Carlo.init!(mc::MC, ctx::Carlo.MCContext, params::AbstractDict)
+function Carlo.init!(mc::MC, ctx::MCContext, params::AbstractDict)
     mc.state = [rand(ctx.rng, StateIndex.(1:s.dim)) for s in mc.sse_data.sites]
 
     init_opstring_cutoff =
@@ -56,7 +57,7 @@ function Carlo.init!(mc::MC, ctx::Carlo.MCContext, params::AbstractDict)
     return nothing
 end
 
-function Carlo.sweep!(mc::MC, ctx::Carlo.MCContext)
+function Carlo.sweep!(mc::MC, ctx::MCContext)
     diagonal_update(mc, ctx)
     make_vertex_list!(mc.vertex_list, mc.operators, mc.sse_data.bonds)
     worm_update(mc, ctx)
@@ -64,7 +65,7 @@ function Carlo.sweep!(mc::MC, ctx::Carlo.MCContext)
     return nothing
 end
 
-function Carlo.measure!(mc::MC, ctx::Carlo.MCContext)
+function Carlo.measure!(mc::MC, ctx::MCContext)
     sign = measure_sign(mc.operators, mc.sse_data)
 
     measure!(ctx, :Sign, float(sign))
@@ -105,13 +106,8 @@ end
 
 unsign(signobs, sign) = signobs ./ sign
 
-function Carlo.register_evaluables(
-    ::Type{<:MC{Model}},
-    eval::Carlo.Evaluator,
-    params::AbstractDict,
-) where {Model}
-
-    model = Model(params)
+function Carlo.register_evaluables(::Type{<:MC}, eval::Evaluator, params::AbstractDict)
+    model = params[:model](params)
 
     for estimator in get_opstring_estimators(model)
         register_evaluables(estimator, eval, params)
@@ -132,7 +128,7 @@ function Carlo.register_evaluables(
 end
 
 
-function diagonal_update(mc::MC{Model,NSites}, ctx::Carlo.MCContext) where {Model,NSites}
+function diagonal_update(mc::MC{Model,NSites}, ctx::MCContext) where {Model,NSites}
     if mc.num_operators >= length(mc.operators) * 0.5
         if is_thermalized(ctx)
             @warn "spin array resized after thermalization"
@@ -224,7 +220,7 @@ function worm_update(mc::MC, ctx::MCContext)
     return nothing
 end
 
-function worm_traverse!(mc::MC{Model}, ctx::Carlo.MCContext) where {Model}
+function worm_traverse!(mc::MC{Model}, ctx::MCContext) where {Model}
     if mc.num_operators == 0
         return 0
     end

@@ -99,13 +99,10 @@ function integrated_correlator(
     ]
 end
 
-@struct_equal S.MagnetModel
-
 function summarize_tasks(job::JobInfo)
     summarized_tasks = Tuple{Vector{String},Vector{Float64},Dict{Symbol,Any}}[]
 
     for task in job.tasks
-
         params = deepcopy(task.params)
         T = pop!(params, :T)
 
@@ -122,13 +119,13 @@ function summarize_tasks(job::JobInfo)
 end
 
 
-function run_ed(::Type{Model}, job::JobInfo) where {Model}
+function run_ed(job::JobInfo)
     results = Dict{Symbol,Any}[]
 
     obsnames = Set{Symbol}()
 
     for (names, Ts, params) in summarize_tasks(job)
-        model = Model(params)
+        model = params[:model](params)
         H = hamiltonian(model)
 
         (Es, psi) = eigen(Symmetric(Matrix(H)))

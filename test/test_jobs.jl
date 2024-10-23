@@ -11,11 +11,12 @@ function testjob_magnet_square(sweeps::Integer, thermalization::Integer)
 
     Ts = range(0.04, 4.00, length = 7)
 
+    tm.model = S.MagnetModel
     tm.unitcell = S.UnitCells.square
     tm.Lx = 2
     tm.Ly = 4
 
-    tm.measure = S.all_magnetization_estimators(S.MagnetModel, S.dimension(tm.unitcell))
+    tm.measure = S.all_magnetization_estimators(tm.model, S.dimension(tm.unitcell))
 
     tm.J = 1.23
     tm.hz = -0.2
@@ -26,7 +27,7 @@ function testjob_magnet_square(sweeps::Integer, thermalization::Integer)
         task(tm; T = T)
     end
 
-    return "magnet_square", S.MagnetModel, tm
+    return make_tasks(tm)
 end
 
 function testjob_honeycomb(sweeps::Integer, thermalization::Integer)
@@ -39,6 +40,7 @@ function testjob_honeycomb(sweeps::Integer, thermalization::Integer)
 
     Ts = range(0.04, 4.00, length = 7)
 
+    tm.model = S.MagnetModel
     tm.unitcell = S.UnitCells.honeycomb
     tm.Lx = 2
     tm.Ly = 2
@@ -48,7 +50,7 @@ function testjob_honeycomb(sweeps::Integer, thermalization::Integer)
         :bonds => [Dict(:J => :J1), Dict(:J => :J2), Dict(:J => :J3)],
     )
 
-    tm.measure = S.all_magnetization_estimators(S.MagnetModel, S.dimension(tm.unitcell))
+    tm.measure = S.all_magnetization_estimators(tm.model, S.dimension(tm.unitcell))
 
     tm.J1 = 1.0
     tm.J2 = 0.5
@@ -65,7 +67,35 @@ function testjob_honeycomb(sweeps::Integer, thermalization::Integer)
         task(tm; T = T)
     end
 
-    return "honeycomb", S.MagnetModel, tm
+    make_tasks(tm)
+end
+
+
+function testjob_magnet_bench(sweeps::Integer, thermalization::Integer)
+    tm = TaskMaker()
+    tm.sweeps = sweeps
+    tm.thermalization = thermalization
+    tm.binsize = 100
+
+    tm.seed = 124535
+
+    tm.T = 0.05
+
+    tm.model = S.MagnetModel
+    tm.unitcell = S.UnitCells.square
+    tm.Lx = 10
+    tm.Ly = 10
+
+    tm.measure = S.all_magnetization_estimators(S.MagnetModel, S.dimension(tm.unitcell))
+
+    tm.J = 1.23
+    tm.hz = -0.2
+
+    tm.ed_run = 1
+
+    task(tm)
+
+    return make_tasks(tm)
 end
 
 function generate_test_jobs(
@@ -73,26 +103,22 @@ function generate_test_jobs(
     sweeps::Integer,
     thermalization::Integer,
 )
-    jobs = Dict{String,JobInfo}()
+    jobs = Dict{Symbol,JobInfo}()
 
-    function add_test_job(
-        name::AbstractString,
-        model::Type{<:S.AbstractModel},
-        tm::TaskMaker,
-    )
-        jobs[name] = JobInfo(
-            "$jobdir/$name",
-            S.mc(model);
+    function add_test_job(func)
+        jobs[Symbol(func)] = JobInfo(
+            "$jobdir/$(string(func))",
+            S.MC;
             run_time = "15:00",
             checkpoint_time = "15:00",
-            tasks = make_tasks(tm),
+            tasks = func(sweeps, thermalization),
         )
 
         return nothing
     end
 
-    add_test_job(testjob_honeycomb(sweeps, thermalization)...)
-    add_test_job(testjob_magnet_square(sweeps, thermalization)...)
+    add_test_job(testjob_honeycomb)
+    add_test_job(testjob_magnet_square)
 
     return jobs
 end

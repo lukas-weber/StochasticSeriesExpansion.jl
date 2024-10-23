@@ -66,6 +66,7 @@ end
     sweeps = 1000
     params = Dict(
         :T => 0.1,
+        :model => S.MagnetModel,
         :unitcell => S.UnitCells.honeycomb,
         :measure => [],
         :parameter_map => Dict(:sites => [Dict(:S => :S1), Dict(:S => :S2)]),
@@ -81,7 +82,7 @@ end
 
     ctx = MCContext{Random.Xoshiro}(params)
 
-    mc = S.mc(S.MagnetModel)(params)
+    mc = S.MC(params)
 
     Carlo.init!(mc, ctx, params)
 
