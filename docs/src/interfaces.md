@@ -16,7 +16,7 @@ StochasticSeriesExpansion.normalization_site_count
 
 ## [Operator string estimator interface](@id abstract_opstring_estimator)
 
-The `AbstractOpstringEstimator` interface is used to implement most observable estimators in StochasticSeriesExpansion.
+The `AbstractOpstringEstimator` interface is used to implement most observable estimators in StochasticSeriesExpansion.jl.
 
 ```@docs
 AbstractOpstringEstimator

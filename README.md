@@ -17,7 +17,7 @@ It is built on the [Carlo](https://github.com/lukas-weber/Carlo.jl.git) framewor
 
 ## Getting started
 
-To start, install Carlo and StochasticSeriesExpansion in Julia
+To start, install Carlo.jl and StochasticSeriesExpansion.jl in Julia
 ```julia
 using Pkg
 Pkg.add("Carlo")
