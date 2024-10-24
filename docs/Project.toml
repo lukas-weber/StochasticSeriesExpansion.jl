@@ -1,4 +1,5 @@
 [deps]
+Carlo = "780c37f4-4e5a-43de-9e79-65c261e525a4"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 StochasticSeriesExpansion = "1c8cc5bc-bd94-4f4b-9471-62b736d0cc39"
 

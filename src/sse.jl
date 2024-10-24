@@ -106,7 +106,11 @@ end
 
 unsign(signobs, sign) = signobs ./ sign
 
-function Carlo.register_evaluables(::Type{<:MC}, eval::Evaluator, params::AbstractDict)
+function Carlo.register_evaluables(
+    ::Type{<:MC},
+    eval::AbstractEvaluator,
+    params::AbstractDict,
+)
     model = params[:model](params)
 
     for estimator in get_opstring_estimators(model)
