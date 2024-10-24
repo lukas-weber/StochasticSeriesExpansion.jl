@@ -3,8 +3,7 @@
     hz = 0.3
     m = S.MagnetModel(
         Dict(
-            :unitcell => S.UnitCells.square,
-            :Lx => L,
+            :lattice => (; unitcell = S.UnitCells.square, size = (L, L)),
             :J => 1.2,
             :hz => hz,
             :Dz => 0.32,
@@ -17,7 +16,11 @@
     @test all(m.bond_params[1].hz .≈ (hz / 4, hz / 4))
 
     m = S.MagnetModel(
-        Dict(:unitcell => S.UnitCells.square, :Lx => L, :Ly => 2 * L, :J => 1.0, :hz => hz),
+        Dict(
+            :lattice => (unitcell = S.UnitCells.square, size = (L, 2L)),
+            :J => 1.0,
+            :hz => hz,
+        ),
     )
 
     @test length(m.site_params) == 2 * L^2
@@ -28,11 +31,8 @@
     Jy = 2.0
     m = S.MagnetModel(
         Dict(
-            :unitcell => S.UnitCells.square,
-            :parameter_map =>
-                Dict(:bonds => Dict(1 => Dict(:J => :Jx), 2 => Dict(:J => :Jy))),
-            :Lx => L,
-            :Lx => 2 * L,
+            :lattice => (; unitcell = S.UnitCells.square, size = (L, 2L)),
+            :parameter_map => (J = (:Jx, :Jy),),
             :hz => hz,
             :Jx => Jx,
             :Jy => Jy,
@@ -44,11 +44,8 @@
 
     @test_throws KeyError S.MagnetModel(
         Dict(
-            :unitcell => S.UnitCells.square,
-            :parameter_map =>
-                Dict(:bonds => Dict(1 => Dict(:J => :Jx), 2 => Dict(:J => :nonexistent))),
-            :Lx => L,
-            :Lx => 2 * L,
+            :lattice => (; unitcell = S.UnitCells.square, size = (L, 2L)),
+            :parameter_map => (; J = (:Jx, :nonexistent),),
             :hz => hz,
             :Jx => Jx,
             :Jy => Jy,

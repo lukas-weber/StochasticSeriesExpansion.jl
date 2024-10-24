@@ -30,10 +30,8 @@ end
 @testset "worm_traverse!" begin
     params = Dict(
         :T => 0.1,
-        :unitcell => S.UnitCells.square,
+        :lattice => (unitcell = S.UnitCells.square, size = (4, 4)),
         :measure => [],
-        :Lx => 4,
-        :Ly => 4,
         :J => 1.0,
         :S => 1 // 2,
     )
@@ -67,11 +65,9 @@ end
     params = Dict(
         :T => 0.1,
         :model => S.MagnetModel,
-        :unitcell => S.UnitCells.honeycomb,
         :measure => [],
-        :parameter_map => Dict(:sites => [Dict(:S => :S1), Dict(:S => :S2)]),
-        :Lx => 4,
-        :Ly => 4,
+        :parameter_map => (S = (:S1, :S2),),
+        :lattice => (unitcell = S.UnitCells.honeycomb, size = (4, 4)),
         :J => 1.4,
         :S1 => 1 // 2,
         :S2 => 1,

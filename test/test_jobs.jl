@@ -12,11 +12,9 @@ function testjob_magnet_square(sweeps::Integer, thermalization::Integer)
     Ts = range(0.04, 4.00, length = 7)
 
     tm.model = S.MagnetModel
-    tm.unitcell = S.UnitCells.square
-    tm.Lx = 2
-    tm.Ly = 4
+    tm.lattice = (unitcell = S.UnitCells.square, size = (2, 4))
 
-    tm.measure = S.all_magnetization_estimators(tm.model, S.dimension(tm.unitcell))
+    tm.measure = S.all_magnetization_estimators(tm.model, S.dimension(tm.lattice.unitcell))
 
     tm.J = 1.23
     tm.hz = -0.2
@@ -41,16 +39,11 @@ function testjob_honeycomb(sweeps::Integer, thermalization::Integer)
     Ts = range(0.04, 4.00, length = 7)
 
     tm.model = S.MagnetModel
-    tm.unitcell = S.UnitCells.honeycomb
-    tm.Lx = 2
-    tm.Ly = 2
+    tm.lattice = (unitcell = S.UnitCells.honeycomb, size = (2, 2))
 
-    tm.parameter_map = Dict(
-        :sites => [Dict(:S => :Sa), Dict(:S => :Sb)],
-        :bonds => [Dict(:J => :J1), Dict(:J => :J2), Dict(:J => :J3)],
-    )
+    tm.parameter_map = (S = [:Sa, :Sb], J = [:J1, :J2, :J3])
 
-    tm.measure = S.all_magnetization_estimators(tm.model, S.dimension(tm.unitcell))
+    tm.measure = S.all_magnetization_estimators(tm.model, S.dimension(tm.lattice.unitcell))
 
     tm.J1 = 1.0
     tm.J2 = 0.5
@@ -82,9 +75,7 @@ function testjob_magnet_bench(sweeps::Integer, thermalization::Integer)
     tm.T = 0.05
 
     tm.model = S.MagnetModel
-    tm.unitcell = S.UnitCells.square
-    tm.Lx = 10
-    tm.Ly = 10
+    tm.lattice = (unitcell = S.UnitCells.square, size = (10, 10))
 
     tm.measure = S.all_magnetization_estimators(S.MagnetModel, S.dimension(tm.unitcell))
 

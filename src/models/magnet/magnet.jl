@@ -36,74 +36,63 @@ struct MagnetModel <: AbstractModel
     opstring_estimators::Vector{DataType}
 end
 
-struct ParameterMap
-    map::Union{Nothing,Dict}
+struct ParameterMap{Map}
+    map::Map
 end
 
 
-function map(parameter_map::ParameterMap, path...)::Symbol
+function map(parameter_map::ParameterMap, name::Symbol, index::Int)::Symbol
     if parameter_map.map === nothing
-        return path[end]
+        return name
     end
 
     res = parameter_map.map
-    for p in path
-        try
-            res = res[p]
-        catch e
-            if e isa KeyError
-                return path[end]
-            end
-        end
+    if !haskey(res, name) || !(index in eachindex(res[name]))
+        return name
     end
 
-    return res
+    return res[name][index]
 end
 
 function MagnetModel(params::AbstractDict{Symbol,<:Any})
-    Lx = params[:Lx]
-    Ly = get(params, :Ly, Lx)
-    lat = Lattice(params[:unitcell], (Lx, Ly))
+    lattice = Lattice(params[:lattice])
 
-    @assert Lx * Ly > 0
-    @assert length(lat.bonds) > 0
+    @assert length(lattice.bonds) > 0
 
     parameter_map = ParameterMap(get(params, :parameter_map, nothing))
 
     pm(path...) = map(parameter_map, path...)
 
     function split_site(param::Symbol, bond::LatticeBond, default)
-        (iuc, _) = split_idx(lat, bond.i)
-        (juc, _) = split_idx(lat, bond.j)
+        (iuc, _) = split_idx(lattice, bond.i)
+        (juc, _) = split_idx(lattice, bond.j)
 
-        first =
-            get(params, pm(:sites, iuc, param), default) / lat.uc.sites[iuc].coordination
-        second =
-            get(params, pm(:sites, juc, param), default) / lat.uc.sites[juc].coordination
+        first = get(params, pm(param, iuc), default) / lattice.uc.sites[iuc].coordination
+        second = get(params, pm(param, juc), default) / lattice.uc.sites[juc].coordination
 
         return first, second
     end
 
     full_bond_params = [
         MagnetBondParams(
-            params[pm(:bonds, bond.type, :J)],
-            get(params, pm(:bonds, bond.type, :d), 0.0),
+            params[pm(:J, bond.type)],
+            get(params, pm(:d, bond.type), 0.0),
             split_site(:Dx, bond, 0.0),
             split_site(:Dz, bond, 0.0),
             split_site(:hz, bond, 0.0),
-        ) for bond in lat.bonds
+        ) for bond in lattice.bonds
     ]
 
     full_site_params = repeat(
         [
-            MagnetSiteParams(get(params, pm(:sites, i, :S), 1 // 2) * 2 + 1) for
-            i in eachindex(lat.uc.sites)
+            MagnetSiteParams(get(params, pm(:S, i), 1 // 2) * 2 + 1) for
+            i in eachindex(lattice.uc.sites)
         ],
-        prod(lat.Ls),
+        prod(lattice.Ls),
     )
 
-    opstring_ests = gen_opstring_estimators(lat, params)
-    return MagnetModel(lat, full_bond_params, full_site_params, opstring_ests)
+    opstring_ests = gen_opstring_estimators(lattice, params)
+    return MagnetModel(lattice, full_bond_params, full_site_params, opstring_ests)
 end
 
 function magnetization_state(mag::MagnetModel, site_idx::Integer, state_idx::Integer)

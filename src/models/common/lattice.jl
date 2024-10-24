@@ -192,6 +192,8 @@ end
 dimension(lat::Lattice{D}) where {D} = D
 dimension(unitcell::UnitCell{D}) where {D} = D
 
+Lattice(params::Union{NamedTuple,AbstractDict}) = Lattice(params.unitcell, params.size)
+
 function Lattice(uc::UnitCell{D}, Ls::NTuple{D,<:Integer}) where {D}
     dims = (length(uc.sites), Ls...)
     bonds = LatticeBond[]
