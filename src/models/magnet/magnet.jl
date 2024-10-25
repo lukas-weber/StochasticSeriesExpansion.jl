@@ -51,10 +51,10 @@ Further parameters:
     * `:staggered_magnetization`: measures bipartite staggered (antiferromagnetic) magnetization
     * any `Type{<:AbstractOpstringEstimator}` for an implementation of the [operator string estimator interface](@ref abstract_opstring_estimator)
 """
-struct MagnetModel <: AbstractModel
-    lattice::Lattice
+struct MagnetModel{D,F} <: AbstractModel
+    lattice::Lattice{D}
 
-    bond_params::Vector{MagnetBondParams}
+    bond_params::Vector{MagnetBondParams{F}}
     site_params::Vector{MagnetSiteParams}
 
     opstring_estimators::Vector{DataType}
@@ -155,7 +155,7 @@ function generate_vertex_data(mag::MagnetModel, uc_bond, bond::MagnetBondParams)
     return VertexData((dimi, dimj), H; energy_offset_factor = energy_offset_factor)
 end
 
-leg_count(::Type{MagnetModel}) = 4
+leg_count(::Type{<:MagnetModel}) = 4
 
 function generate_sse_data(mag::MagnetModel)
     vertex_data = [

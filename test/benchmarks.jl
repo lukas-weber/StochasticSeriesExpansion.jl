@@ -19,11 +19,12 @@ end
 function bench_total()
     function bench()
         mktempdir() do dir
-            name, model, tm = testjob_magnet_bench(1000, 1000)
+            tasks = testjob_magnet_bench(10000, 1000)
             job = JobInfo(
-                "$dir/$name",
+                "$dir/bench",
                 S.MC,
-                tasks = make_tasks(tm),
+                rng = Random.MersenneTwister,
+                tasks = tasks,
                 checkpoint_time = "15:00",
                 run_time = "15:00",
             )

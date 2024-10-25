@@ -28,8 +28,8 @@ function calc_magnetization!(
     obs::AbstractDict{Symbol,<:Any},
     magnet::S.MagnetModel,
     ens::Ensemble,
-    ::Type{S.MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}},
-) where {OrderingVector,StaggerUC,Model,Prefix,Dimension}
+    ::Type{S.MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix}},
+) where {OrderingVector,StaggerUC,Model,Prefix}
     calc_magnetization!(
         obs,
         magnet,

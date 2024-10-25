@@ -3,12 +3,11 @@
         OrderingVector,
         StaggerUC,
         Model,
-        Prefix,
-        Dimension} <: AbstractOpstringEstimator
+        Prefix} <: AbstractOpstringEstimator
 
 Generic operator string estimator that can be used for all models that have
 
-* a field `lattice::Lattice{Dimension}`
+* a field `lattice::Lattice`
 * implement [`magnetization_state`](@ref).
 
 optionally, [`magnetization_lattice_site_idx`](@ref).
@@ -29,14 +28,12 @@ Here, ``m = \frac{1}{N} \sum_i m_i``, the ``m_i`` are given by [`magnetization_s
 * If `StaggerUC` is true, the sublattice sign of the unitcell is additionally taken into account.
 * `Model`: model type to apply this estimator to.
 * `Prefix`: (Symbol) this prefix is added to all observable names. Consider using [`magnetization_estimator_standard_prefix`](@ref).
-* `Dimension`: dimension of the underlying lattice.
 """
 Base.@kwdef mutable struct MagnetizationEstimator{
     OrderingVector,
     StaggerUC,
     Model<:AbstractModel,
     Prefix,
-    Dimension,
 } <: AbstractOpstringEstimator
     model::Model
 
@@ -61,7 +58,6 @@ function all_magnetization_estimators(model::Type{<:AbstractModel}, dimension::I
             stagger_uc,
             model,
             magnetization_estimator_standard_prefix(q, stagger_uc),
-            dimension,
         } for stagger_uc in (false, true),
         q in Iterators.product(((false, true) for _ = 1:dimension)...)
     ]
@@ -82,27 +78,22 @@ In models where additional degrees of freedom exist, this function maps sse site
 magnetization_lattice_site_idx(::AbstractModel, sse_site_idx::Integer) = sse_site_idx
 
 function staggered_sign(
-    est::MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension},
+    est::MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix},
     site_idx::Integer,
-)::Int where {OrderingVector,StaggerUC,Model,Prefix,Dimension}
-    return staggered_sign(
-        est.model.lattice::Lattice{Dimension},
-        OrderingVector,
-        StaggerUC,
-        site_idx,
-    )
+)::Int where {OrderingVector,StaggerUC,Model,Prefix}
+    return staggered_sign(est.model.lattice, OrderingVector, StaggerUC, site_idx)
 end
 
 function init(
-    ::Type{MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}},
-    model::Model,
+    ::Type{MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix}},
+    model::AbstractModel,
     state::AbstractVector{StateIndex},
-) where {OrderingVector,StaggerUC,Model,Prefix,Dimension}
-    tmpmag = @fastmath sum(
+) where {OrderingVector,StaggerUC,Model,Prefix}
+    tmpmag = @inline @fastmath sum(
         site ->
             staggered_sign(model.lattice, OrderingVector, StaggerUC, site) *
             magnetization_state(model, site, state[site]),
-        1:site_count(model.lattice::Lattice{Dimension}),
+        1:site_count(model.lattice),
     )
 
     mag = tmpmag
@@ -110,24 +101,25 @@ function init(
     mag2 = tmpmag^2
     mag4 = tmpmag^4
 
-    return MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}(;
-        model = model,
+    # use typeof(model) here because Model may be an abstract type
+    return MagnetizationEstimator{OrderingVector,StaggerUC,typeof(model),Prefix}(;
+        model,
         n = 1,
-        tmpmag = tmpmag,
-        mag = mag,
-        absmag = absmag,
-        mag2 = mag2,
-        mag4 = mag4,
+        tmpmag,
+        mag,
+        absmag,
+        mag2,
+        mag4,
     )
 end
 
-function measure(
+@inline function measure(
     est::MagnetizationEstimator,
     op::OperCode,
     ::AbstractVector{StateIndex},
     sse_data::SSEData,
 )
-    @fastmath if !isdiagonal(op)
+    @inbounds if !isdiagonal(op)
         bond = sse_data.bonds[get_bond(op)]
         vd = get_vertex_data(sse_data, get_bond(op))
         leg_state = get_leg_state(vd, get_vertex(op))
@@ -222,8 +214,8 @@ function result(
 end
 
 get_prefix(
-    ::Type{MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Dimension}},
-) where {OrderingVector,StaggerUC,Model,Prefix,Dimension} = Prefix
+    ::Type{MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix}},
+) where {OrderingVector,StaggerUC,Model,Prefix} = Prefix
 
 function register_evaluables(
     est::Type{<:MagnetizationEstimator},

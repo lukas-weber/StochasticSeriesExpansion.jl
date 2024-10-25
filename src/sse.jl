@@ -145,7 +145,7 @@ function diagonal_update(mc::MC{Model,NSites}, ctx::MCContext) where {Model,NSit
     p_make_bond_raw = length(mc.sse_data.bonds) / mc.T
     p_remove_bond_raw = mc.T / length(mc.sse_data.bonds)
 
-    for (iop, op) in enumerate(mc.operators)
+    @inbounds for (iop, op) in enumerate(mc.operators)
         if isidentity(op)
             bond = rand(ctx.rng, 1:length(mc.sse_data.bonds))
             b = mc.sse_data.bonds[bond]
@@ -265,7 +265,7 @@ function worm_traverse!(
 
     worm_length = 1
 
-    while true
+    @inbounds while true
         op = operators[p]
         bond = get_bond(op)
         (leg_out, wormfunc_out, new_vertex) = scatter(
@@ -313,11 +313,11 @@ end
 This generated function fuses multiple SSE estimators that have to loop over the operator string into a single loop.
 """
 @generated function measure_opstring!(
-    mc::MC{Model},
+    mc::MC{Model,NSites},
     ctx::MCContext,
     sign::AbstractFloat,
     estimator_types::Type{<:AbstractOpstringEstimator}...,
-) where {Model}
+) where {Model,NSites}
     get_type(::Type{Type{T}}) where {T} = T
     inits = Expr(
         :tuple,
@@ -350,7 +350,7 @@ This generated function fuses multiple SSE estimators that have to loop over the
                 leg_state = get_leg_state(vd, get_vertex(op))
 
                 for (i, s) in enumerate(b.sites)
-                    mc.state[s] = leg_state[leg_count(Model)÷2+i]
+                    mc.state[s] = leg_state[NSites+i]
                 end
             end
 

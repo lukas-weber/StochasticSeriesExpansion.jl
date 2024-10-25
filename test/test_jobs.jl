@@ -77,7 +77,8 @@ function testjob_magnet_bench(sweeps::Integer, thermalization::Integer)
     tm.model = S.MagnetModel
     tm.lattice = (unitcell = S.UnitCells.square, size = (10, 10))
 
-    tm.measure = S.all_magnetization_estimators(S.MagnetModel, S.dimension(tm.unitcell))
+    tm.measure =
+        S.all_magnetization_estimators(S.MagnetModel, S.dimension(tm.lattice.unitcell))
 
     tm.J = 1.23
     tm.hz = -0.2

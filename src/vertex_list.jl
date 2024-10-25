@@ -25,7 +25,7 @@ function make_vertex_list!(
     fill!(vl.v_first, (-1, -1))
     fill!(vl.v_last, (-1, -1))
 
-    for (p, op) in enumerate(operators)
+    @inbounds for (p, op) in enumerate(operators)
         if isidentity(op)
             continue
         end
@@ -43,7 +43,7 @@ function make_vertex_list!(
         end
     end
 
-    for i = 1:length(vl.v_first)
+    @inbounds for i = 1:length(vl.v_first)
         if vl.v_first[i][1] != -1
             vl.vertices[vl.v_first[i]...] = vl.v_last[i]
             vl.vertices[vl.v_last[i]...] = vl.v_first[i]
