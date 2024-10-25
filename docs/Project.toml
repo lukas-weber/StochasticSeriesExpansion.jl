@@ -1,6 +1,8 @@
 [deps]
 Carlo = "780c37f4-4e5a-43de-9e79-65c261e525a4"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 StochasticSeriesExpansion = "1c8cc5bc-bd94-4f4b-9471-62b736d0cc39"
 
 [compat]

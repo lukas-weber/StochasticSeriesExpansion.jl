@@ -42,11 +42,27 @@ UCSite(pos::Tuple) = UCSite(SVector(pos), 0, 0)
 """
     UnitCell{D}
 
-The unit cell of a `D`-dimensional lattice.
+The unit cell used to build a `D`-dimensional lattice. It can be specified
 
-    UnitCell(lattice_vectors::SMatrix{D,D, Float64}, sites::AbstractVector{UCSite{D}}, bonds::AbstractVector{UCBond{D}})
+    UnitCell(
+        lattice_vectors::SMatrix{D,D,Float64},
+        sites::AbstractVector{UCSite{D}},
+        bonds::AbstractVector{UCBond{D}}
+    )
 
-The columns of `lattice_vector` are the lattice vectors. `sites` and `bonds` define the `bonds` within the unit cell.
+The columns of `lattice_vector` are the lattice vectors. `sites` and `bonds` define the connections within and out of the unit cell.
+
+## Example
+
+One of the predefined unitcells in [`UnitCells`](@ref) is defined as
+```@example
+const honeycomb = UnitCell(
+    [[sqrt(3) / 2, -0.5] [sqrt(3 / 2), 0.5]],
+    [UCSite((0.0, 0.0)), UCSite((1 / 3, 1 / 3))],
+    [UCBond(1, (0, 0), 2), UCBond(2, (0, 1), 1), UCBond(2, (1, 0), 1)],
+)
+```
+Refer the the documentation of [`UCSite`](@ref) and [`UCBond`](@ref) for more information.
 """
 struct UnitCell{D}
     lattice_vectors::SMatrix{D,D,Float64} # as columns
@@ -144,7 +160,7 @@ Information about a lattice bond.
 * `i`, `j`: sites connected by the bond
 
 !!! note
-In contrast to [`SSEData`](@ref), `Lattice` only supports 2-site bonds at this point. 
+    In contrast to [`SSEBond`](@ref), `LatticeBond` only supports 2-site bonds at this point.
 """
 struct LatticeBond
     type::Int
@@ -167,11 +183,22 @@ struct LatticeSite{D}
     ix::NTuple{D,Int}
 end
 
-"""
+@doc raw"""
     Lattice{D}
 
 This is a model-agnostic implementation of a `D`-dimensional lattice. It allows generating translation symmetric bond graph based on
 minimal information derived from a unit cell object.
+
+## Task parameters
+From the job file, lattices are specified using a `lattice` parameter.
+
+```
+tm.lattice = (
+    unitcell = StochasticSeriesExpansion.UnitCells.honeycomb,
+    size = (10,10),
+)
+```
+The `unitcell` should be an instance of [`UnitCell`](@ref) and `size` specifies how many copies of the unit cell in each dimension make up the supercell. The above example creates a honeycomb lattice with ``2\times 10\times 10`` sites.
 
 ## Public fields
 
@@ -179,7 +206,6 @@ minimal information derived from a unit cell object.
 * `Ls`: tuple of lattice lengths
 * `bonds`: array of [`LatticeBond`](@ref).
 * `site`: array of [`LatticeSite`](@ref), useful for quickly converting linear site indices to spatial ones.
-
 """
 struct Lattice{D}
     uc::UnitCell{D}
@@ -241,7 +267,15 @@ function staggered_sign(
 end
 
 """
-The `UnitCells` module provides some predefined unitcells that can be used to construct lattices. It is also a helpful resource to see how to define your own unit cells.
+The `UnitCells` submodule provides some predefined unitcells that can be used to construct lattices.
+
+Currently there are:
+- `square`: square lattice
+- `columnar_dimer`: square lattice of dimers
+- `honeycomb`: honeycomb lattice
+- `triangle`: triangle lattice
+
+The source code of these is a great starting point if you want to define your own.
 """
 module UnitCells
 import ..UnitCell, ..UCSite, ..UCBond

@@ -21,7 +21,7 @@ It computes the
 * `:MagChi`, susceptibility ``N \int_0^\beta d\tau \langle m(\tau) m\rangle``
 * `:BinderRatio`, Binder ratio ``\langle m^2\rangle^2/\langle m^4\rangle``
 
-Here, ``m = \frac{1}{N} \sum_i m_i``,the ``m_i`` are given by [`magnetization_state`](@ref) and ``N`` is returned by [`normalization_site_count`](@ref).
+Here, ``m = \frac{1}{N} \sum_i m_i``, the ``m_i`` are given by [`magnetization_state`](@ref) and ``N`` is returned by [`normalization_site_count`](@ref).
 
 ## Type parameters
 

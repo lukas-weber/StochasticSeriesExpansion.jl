@@ -23,9 +23,33 @@ struct MagnetSiteParams
 end
 
 
-"""Describes the parameters of each bond
+@doc raw"""
+    MagnetModel <: AbstractModel
 
-``H = \\sum_{ij} J_ij S_i\\cdotS_j + d_ij S_i^z S_j^z``
+Describes an arbitrary-spin quantum magnet with the Hamiltonian
+```math
+H = \sum_{⟨i,j⟩} J_{ij} S_i \cdot S_j + d_{ij} S_i^z S_j^z + \sum_i h_i S^z_i + D^z_i (S^z_i)^2 + D^x_i (S^x_i)^2
+```
+
+## Task parameters
+
+- `lattice`: sets the [`Lattice`](@ref)
+
+- `S`: spin magnitude (default: `1//2`)
+- `J`: exchange coupling ``J_{ij}``
+- `d`: exchange anisotrozy ``d_{ij}`` (default: `0`)
+- `h`: magnetic field in ``z``-direction ``h_i`` (default: `0`)
+- `D_z`: single-ion anisotropy in ``z``-direction ``D^z_i`` (default: `0`)
+- `D_x`: single-ion anisotropy in ``x``-direction ``D^x_i`` (default: `0`)
+
+By default, these are the same for each site or bond. However, they (including `:S` )can be adjusted to be different across the unit cell using
+- `parameter_map`: [parameter map](@ref parameter_maps) that assigns different parameters to different bonds/sites of the unit cell.
+
+Further parameters:
+- `measure`: control what observables should be measured. Vector containing a combination of
+    * `:magnetization`: measures uniform magnetization
+    * `:staggered_magnetization`: measures bipartite staggered (antiferromagnetic) magnetization
+    * any `Type{<:AbstractOpstringEstimator}` for an implementation of the [operator string estimator interface](@ref abstract_opstring_estimator)
 """
 struct MagnetModel <: AbstractModel
     lattice::Lattice

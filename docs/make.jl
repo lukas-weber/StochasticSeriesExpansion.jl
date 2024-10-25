@@ -7,6 +7,7 @@ makedocs(
     pages = [
         "index.md",
         # "tutorial.md",
+        "Usage" => ["tutorial.md", "models.md"],
         "Implementing custom models" => ["interfaces.md", "sse_data.md"],
     ],
 )
