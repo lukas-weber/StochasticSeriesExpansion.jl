@@ -377,3 +377,20 @@ function print_opstring(operators::AbstractVector{<:OperCode}, data::SSEData)
 
     return nothing
 end
+
+function Carlo.parallel_tempering_log_weight_ratio(mc::MC, parameter::Symbol, new_value)
+    if parameter != :T
+        error("unsupported parallel tempering parameter $parameter")
+    end
+
+    return -mc.num_operators * log(new_value / T)
+end
+
+function Carlo.parallel_tempering_change_parameter!(mc::MC, parameter::Symbol, new_value)
+    if parameter != :T
+        error("unsupported parallel tempering parameter $parameter")
+    end
+
+    mc.T = new_value
+    return nothing
+end
