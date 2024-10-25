@@ -1,5 +1,4 @@
 using Carlo.ResultTools
-using Distributions
 using Measurements
 
 include("ed/ed.jl")
