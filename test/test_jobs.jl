@@ -48,6 +48,9 @@ function testjob_honeycomb(sweeps::Integer, thermalization::Integer)
     tm.J1 = 1.0
     tm.J2 = 0.5
     tm.J3 = 1.0
+
+    tm.d = 0.2
+
     tm.Dz = 0.2
     tm.Dx = 0.5
 

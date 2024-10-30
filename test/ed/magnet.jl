@@ -12,7 +12,7 @@ function hamiltonian(magnet::S.MagnetModel)
         for (bond, params) in zip(magnet.lattice.bonds, magnet.bond_params)
             H +=
                 params.J * heisen_bond(lifter, bond.i, bond.j) +
-                params.d * spin(lifter, bond.i, 3) * spin(lifter, bond.j, 3) +
+                params.J * params.d * spin(lifter, bond.i, 3) * spin(lifter, bond.j, 3) +
                 params.hz[1] * spin(lifter, bond.i, 3) +
                 params.hz[2] * spin(lifter, bond.j, 3) +
                 params.Dx[1] * spin(lifter, bond.i, 1)^2 +
