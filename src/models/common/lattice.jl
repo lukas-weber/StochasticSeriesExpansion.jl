@@ -308,4 +308,24 @@ const triangle = UnitCell(
     [UCSite((0.0, 0.0))],
     [UCBond(1, (0, 1), 1), UCBond(1, (1, 0), 1), UCBond(1, (1, 1), 1)],
 )
+
+const fully_frust_square_bilayer = UnitCell(
+    [
+        1.0 0.0
+        0.0 1.0
+    ],
+    [UCSite((0.0, 0.0)), UCSite((0.0, 0.0))],
+    [
+        UCBond(1, (0, 0), 2),
+        UCBond(1, (0, 1), 1),
+        UCBond(2, (0, 1), 2),
+        UCBond(1, (1, 0), 1),
+        UCBond(2, (1, 0), 2),
+        UCBond(1, (0, 1), 2),
+        UCBond(2, (0, 1), 1),
+        UCBond(1, (1, 0), 2),
+        UCBond(2, (1, 0), 1),
+    ],
+)
+
 end

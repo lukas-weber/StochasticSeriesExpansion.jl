@@ -26,5 +26,6 @@ include("models/common/operators.jl")
 include("models/common/lattice.jl")
 include("models/common/magnetization_estimator.jl")
 include("models/magnet/magnet.jl")
+include("models/cluster/cluster.jl")
 
 end # module StochasticSeriesExpansion

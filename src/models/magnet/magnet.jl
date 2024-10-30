@@ -65,7 +65,7 @@ struct ParameterMap{Map}
 end
 
 
-function map(parameter_map::ParameterMap, name::Symbol, index::Int)::Symbol
+function get_parameter(parameter_map::ParameterMap, name::Symbol, index::Int)::Symbol
     if parameter_map.map === nothing
         return name
     end
@@ -85,7 +85,7 @@ function MagnetModel(params::AbstractDict{Symbol,<:Any})
 
     parameter_map = ParameterMap(get(params, :parameter_map, nothing))
 
-    pm(path...) = map(parameter_map, path...)
+    pm(path...) = get_parameter(parameter_map, path...)
 
     function split_site(param::Symbol, bond::LatticeBond, default)
         (iuc, _) = split_idx(lattice, bond.i)
@@ -125,9 +125,13 @@ end
 
 normalization_site_count(mag::MagnetModel) = site_count(mag.lattice)
 
-function generate_vertex_data(mag::MagnetModel, uc_bond, bond::MagnetBondParams)
-    dimi = mag.site_params[uc_bond.iuc].spin_states
-    dimj = mag.site_params[uc_bond.juc].spin_states
+function generate_bond_hamiltonian(
+    uc_bond,
+    bond::MagnetBondParams,
+    sites::NTuple{2,MagnetSiteParams},
+)
+    dimi = sites[1].spin_states
+    dimj = sites[2].spin_states
 
     splusi, szi = spin_operators(Float64, dimi)
     splusj, szj = spin_operators(Float64, dimj)
@@ -152,15 +156,21 @@ function generate_vertex_data(mag::MagnetModel, uc_bond, bond::MagnetBondParams)
         energy_offset_factor = 0.0
     end
 
-    return VertexData((dimi, dimj), H; energy_offset_factor = energy_offset_factor)
+    return (dimi, dimj), H, energy_offset_factor
 end
 
 leg_count(::Type{<:MagnetModel}) = 4
 
 function generate_sse_data(mag::MagnetModel)
     vertex_data = [
-        generate_vertex_data(mag, uc_bond, bond) for
-        (uc_bond, bond) in zip(mag.lattice.uc.bonds, mag.bond_params)
+        let (dims, H, energy_offset_factor) = generate_bond_hamiltonian(
+                uc_bond,
+                bond,
+                (mag.site_params[uc_bond.iuc], mag.site_params[uc_bond.juc]),
+            )
+
+            VertexData(dims, H; energy_offset_factor)
+        end for (uc_bond, bond) in zip(mag.lattice.uc.bonds, mag.bond_params)
     ]
 
     bonds = [SSEBond(bond.type, (bond.i, bond.j)) for bond in mag.lattice.bonds]

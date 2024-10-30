@@ -93,7 +93,7 @@ function init(
         site ->
             staggered_sign(model.lattice, OrderingVector, StaggerUC, site) *
             magnetization_state(model, site, state[site]),
-        1:site_count(model.lattice),
+        eachindex(state),
     )
 
     mag = tmpmag

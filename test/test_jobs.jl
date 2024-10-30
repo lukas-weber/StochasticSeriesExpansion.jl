@@ -66,6 +66,47 @@ function testjob_honeycomb(sweeps::Integer, thermalization::Integer)
     make_tasks(tm)
 end
 
+function testjob_fully_frustrated_bilayer(sweeps::Integer, thermalization::Integer)
+    tm = TaskMaker()
+    tm.sweeps = sweeps
+    tm.thermalization = thermalization
+    tm.binsize = 1000
+
+    tm.seed = 124535
+
+    Ts = range(0.04, 4.00, length = 7)
+
+    tm.model = S.ClusterModel
+    tm.inner_model = S.MagnetModel
+    tm.cluster_bases = (S.ClusterBases.dimer,)
+    tm.lattice = (unitcell = S.UnitCells.fully_frust_square_bilayer, size = (2, 2))
+
+    tm.parameter_map =
+        (S = [:Sa, :Sb], J = [:JD, :JxP, :JxP, :JyP, :JyP, :JxX, :JxX, :JyX, :JyX])
+
+    tm.JD = 1
+    tm.JxP = 0.55
+    tm.JyP = 0.6
+    tm.JxX = 0.7
+    tm.JyX = 0.3
+
+    tm.d = -0.2
+
+    tm.Dz = 0.2
+    tm.Dx = 0.5
+
+    tm.Sa = 1 // 2
+    tm.Sb = 1 // 2
+
+    tm.ed_run = 1
+
+    for T in Ts
+        task(tm; T = T)
+    end
+
+    make_tasks(tm)
+end
+
 
 function testjob_magnet_bench(sweeps::Integer, thermalization::Integer)
     tm = TaskMaker()
@@ -114,6 +155,7 @@ function generate_test_jobs(
 
     add_test_job(testjob_honeycomb)
     add_test_job(testjob_magnet_square)
+    add_test_job(testjob_fully_frustrated_bilayer)
 
     return jobs
 end

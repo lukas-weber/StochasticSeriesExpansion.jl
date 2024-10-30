@@ -3,6 +3,7 @@ using Measurements
 
 include("ed/ed.jl")
 include("ed/magnet.jl")
+include("ed/cluster.jl")
 
 
 function run_mc(job::JobInfo)

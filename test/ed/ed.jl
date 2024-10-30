@@ -1,7 +1,6 @@
 using Carlo.JobTools
 using LinearAlgebra
 using SparseArrays
-using StructEquality
 using DataFrames
 
 struct Lifter
