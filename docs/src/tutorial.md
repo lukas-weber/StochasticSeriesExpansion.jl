@@ -27,9 +27,11 @@ end
 
 Markdown.parse("```julia\n$code\n```")
 ```
-The content of `tm.measure` is interpreted by the [`MagnetModel`](@ref) in order to decide what kinds of observables should be measured. `:magnetization` is a shortcut for observables related to the magnetization in ``S^z`` direction, including the susceptibility.
+The parameters of this job script control different components of StochasticSeriesExpansion.jl. First are the parameters for Carlo.jl, namely the number of `sweeps` (Monte Carlo timesteps), the number of `thermalization` steps and the internal `binsize` that is averaged before saving data to disk (use it to save disk space, but keep it small compared to `sweeps`).
 
-Apart from the model parameters, we also set some general Monte Carlo simulation parameters that are read by Carlo.jl. This includes the number of `sweeps` (Monte Carlo timesteps), the number of `thermalization` steps and the internal `binsize` that is averaged before saving data to disk (use it to save disk space, but keep it small compared to `sweeps`).
+Then, `T` and `model` set the temperature and the model (Hamiltonian) that should be simulated by StochasticSeriesExpansion.jl. See [Parameters](@ref parameters) for a complete list of parameters at this level. The remainder of the parameters are model parameters, interpreted in this case by the [`MagnetModel`](@ref).
+
+`J` and `Dz` which correspond to the parameters in the Hamiltonian, there is the spin magnitude `S` and the vector `measure` which decides what kinds of observables should be measured. `:magnetization` is a shortcut for observables related to the magnetization in ``S^z`` direction, including the susceptibility. The meaning of all the model-specific parameters is listed in the documentation of [`MagnetModel`](@ref).
 
 The `task` function takes a snapshot of the current properties of the [`TaskMaker`](https://lukas-weber.github.io/Carlo.jl/stable/jobtools.html#Carlo.JobTools.TaskMaker) and turns it into one parameter set to be simulated.
 
