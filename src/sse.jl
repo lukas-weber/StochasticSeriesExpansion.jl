@@ -343,8 +343,11 @@ This generated function fuses multiple SSE estimators that have to loop over the
 
     return quote
         estimators = $inits
+        if length(estimators) == 0
+            return nothing
+        end
         n = zero(Int64)
-        for op in mc.operators
+        @inline @inbounds for op in mc.operators
             if isidentity(op)
                 continue
             end

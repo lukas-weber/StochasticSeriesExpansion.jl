@@ -88,19 +88,20 @@ function VertexData(
 end
 
 
-vertex_count(vd::VertexData) = length(vd.weights)
-get_diagonal_vertex(vd::VertexData, compound_state_idx::Integer) =
+@inline vertex_count(vd::VertexData) = length(vd.weights)
+@inline get_diagonal_vertex(vd::VertexData, compound_state_idx::Integer) =
     vd.diagonal_vertices[compound_state_idx]
-get_vertex_weight(vd::VertexData, v::VertexCode) =
+@inline get_vertex_weight(vd::VertexData, v::VertexCode) =
     isinvalid(v) ? 0.0 : vd.weights[get_vertex_idx(v)]
-get_sign(vd::VertexData, v::VertexCode) = vd.signs[get_vertex_idx(v)]
+@inline get_sign(vd::VertexData, v::VertexCode) = vd.signs[get_vertex_idx(v)]
 
 """
     get_leg_state(vd::VertexData, v::VertexCode)
 
 Returns the leg states (matrix elements) of the vertex `v` as an array of state indices.
 """
-get_leg_state(vd::VertexData, v::VertexCode) = @view vd.leg_states[:, get_vertex_idx(v)]
+@inline get_leg_state(vd::VertexData, v::VertexCode) =
+    @view vd.leg_states[:, get_vertex_idx(v)]
 
 function scatter(
     vd::VertexData{NSites},
