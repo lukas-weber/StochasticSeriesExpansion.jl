@@ -392,7 +392,7 @@ function Carlo.parallel_tempering_log_weight_ratio(mc::MC, parameter::Symbol, ne
         error("unsupported parallel tempering parameter $parameter")
     end
 
-    return -mc.num_operators * log(new_value / T)
+    return -mc.num_operators * log(new_value / mc.T)
 end
 
 function Carlo.parallel_tempering_change_parameter!(mc::MC, parameter::Symbol, new_value)
