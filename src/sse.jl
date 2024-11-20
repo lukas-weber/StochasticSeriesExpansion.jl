@@ -8,6 +8,7 @@ mutable struct MC{Model<:AbstractModel,NSites} <: AbstractMC
     opstring_estimators::Vector{Type}
 
     target_worm_length_fraction::Float64
+    num_worms_attenuation_factor::Float64
     avg_worm_length::Float64
     num_worms::Float64
 
@@ -31,8 +32,9 @@ function MC(params::AbstractDict)
         params[:T],
         get_opstring_estimators(model),
         get(params, :target_worm_length_fraction, 2.0),
+        get(params, :num_worms_attenuation_factor, 0.01),
         1.0,
-        5.0,
+        get(params, :init_num_worms, 5),
         0,
         OperCode[],
         StateIndex[],
@@ -138,7 +140,7 @@ function diagonal_update(mc::MC{Model,NSites}, ctx::MCContext) where {Model,NSit
             @warn "spin array resized after thermalization"
         end
         old_length = length(mc.operators)
-        resize!(mc.operators, ceil(Int64, old_length * 1.5 + 100))
+        resize!(mc.operators, floor(Int64, old_length * 1.5 + 100))
         mc.operators[old_length+1:end] .= [OperCode(Identity)]
     end
 
@@ -201,13 +203,17 @@ function worm_update(mc::MC, ctx::MCContext)
 
     avg_worm_length = total_worm_length / ceil(mc.num_worms)
     if !is_thermalized(ctx)
-        mc.avg_worm_length += 0.01 * (avg_worm_length - mc.avg_worm_length)
+        mc.avg_worm_length +=
+            mc.num_worms_attenuation_factor * (avg_worm_length - mc.avg_worm_length)
         target_worms =
             mc.target_worm_length_fraction * mc.num_operators / mc.avg_worm_length
 
         mc.num_worms +=
-            0.01 * (target_worms - mc.num_worms) + tanh(target_worms - mc.num_worms)
-        mc.num_worms = clamp(mc.num_worms, 1.0, 1.0 + mc.num_operators / 2.0)
+            mc.num_worms_attenuation_factor *
+            (target_worms - mc.num_worms + 100tanh(target_worms - mc.num_worms))
+        if mc.num_worms_attenuation_factor != 0
+            mc.num_worms = clamp(mc.num_worms, 1.0, 1.0 + mc.num_operators / 2.0)
+        end
     end
 
     for i in eachindex(mc.state)
