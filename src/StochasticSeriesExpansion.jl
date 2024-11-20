@@ -3,7 +3,7 @@ export AbstractModel,
     SSEData, AbstractOpstringEstimator, SSEBond, VertexData, get_vertex_data, get_leg_state
 export UnitCells
 
-export MagnetModel
+export MagnetModel, ClusterModel
 export MagnetizationEstimator,
     all_magnetization_estimators,
     magnetization_state,
