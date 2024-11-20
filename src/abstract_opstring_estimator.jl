@@ -59,11 +59,11 @@ function result end
 """
     register_evaluables(
         ::Type{<:YourOpstringEstimator},
-        eval::Carlo.Evaluator,
+        eval::AbstractEvaluator,
         params::AbstractDict
     )
 
 Operator string estimators `est` can define their own evaluables using this function, which passes a
-`Carlo.Evaluator` and the task parameters. The state of the estimator is unavailable here since this runs in the postprocessing step.
+`AbstractEvaluator` and the task parameters. The state of the estimator is unavailable here since this runs in the postprocessing step.
 """
 function register_evaluables end

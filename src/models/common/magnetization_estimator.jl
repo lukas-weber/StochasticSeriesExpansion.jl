@@ -214,12 +214,12 @@ function result(
 end
 
 get_prefix(
-    ::Type{MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix}},
-) where {OrderingVector,StaggerUC,Model,Prefix} = Prefix
+    ::Type{MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Tag}},
+) where {OrderingVector,StaggerUC,Model,Prefix,Tag} = Prefix
 
 function register_evaluables(
     est::Type{<:MagnetizationEstimator},
-    eval::Carlo.Evaluator,
+    eval::AbstractEvaluator,
     ::AbstractDict,
 )
     symbols, signsymbols = magnetization_estimator_obs_symbols(get_prefix(est))
