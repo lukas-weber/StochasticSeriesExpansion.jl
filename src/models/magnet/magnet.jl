@@ -119,8 +119,13 @@ function MagnetModel(params::AbstractDict{Symbol,<:Any})
     return MagnetModel(lattice, full_bond_params, full_site_params, opstring_ests)
 end
 
-function magnetization_state(mag::MagnetModel, site_idx::Integer, state_idx::Integer)
-    return @fastmath (mag.site_params[site_idx].spin_states - 1) * 0.5 - state_idx + 1
+@inline function magnetization_state(
+    mag::MagnetModel,
+    ::Val,
+    site_idx::Integer,
+    state_idx::Integer,
+)
+    return (mag.site_params[site_idx].spin_states - 1) * 0.5 - state_idx + 1
 end
 
 normalization_site_count(mag::MagnetModel) = site_count(mag.lattice)
@@ -183,7 +188,7 @@ function gen_opstring_estimators(lattice::Lattice, params::AbstractDict)
     for est in get(params, :measure, [])
         if est == :magnetization
             q = ntuple(i -> false, dimension(lattice))
-            push!(ests, MagnetizationEstimator{q,false,MagnetModel,Symbol()})
+            push!(ests, MagnetizationEstimator{q,false,MagnetModel,Symbol(),nothing})
         elseif est == :staggered_magnetization
             neel = neel_vector(lattice.uc)
             if neel === nothing
@@ -192,7 +197,7 @@ function gen_opstring_estimators(lattice::Lattice, params::AbstractDict)
                 )
             end
             q, stagger_uc = neel
-            push!(ests, MagnetizationEstimator{q,stagger_uc,MagnetModel,:Stag})
+            push!(ests, MagnetizationEstimator{q,stagger_uc,MagnetModel,:Stag,nothing})
         elseif est <: AbstractOpstringEstimator
             push!(ests, est)
         else

@@ -34,6 +34,7 @@ Base.@kwdef mutable struct MagnetizationEstimator{
     StaggerUC,
     Model<:AbstractModel,
     Prefix,
+    Tag,
 } <: AbstractOpstringEstimator
     model::Model
 
@@ -47,26 +48,31 @@ Base.@kwdef mutable struct MagnetizationEstimator{
 end
 
 """
-    all_magnetization_estimators(model::AbstractModel, dimension)
+    all_magnetization_estimators(model::AbstractModel, dimension, tag=nothing)
 
-Generates a list of all valid `MagnetizationEstimator` types for a given model. Useful if you want to measure them all.
+Generates a list of all valid `MagnetizationEstimator` types for a given model and estimator `tag`. Useful if you want to measure them all.
 """
-function all_magnetization_estimators(model::Type{<:AbstractModel}, dimension::Integer)
+function all_magnetization_estimators(
+    model::Type{<:AbstractModel},
+    dimension::Integer,
+    tag = nothing,
+)
     return [
         MagnetizationEstimator{
             q,
             stagger_uc,
             model,
             magnetization_estimator_standard_prefix(q, stagger_uc),
+            tag,
         } for stagger_uc in (false, true),
         q in Iterators.product(((false, true) for _ = 1:dimension)...)
     ]
 end
 
 """
-    magnetization_state(model::AbstractModel, site_idx, state_idx)
+    magnetization_state(model::AbstractModel, ::Val{Tag}, site_idx, state_idx) where {Tag}
 
-This interface needs to be implemented by any model that wants to use `MagnetizationEstimator`. 
+Returns the magnetization at site `site_idx` for the state `state_idx`. `Tag` can be used to dispatch on different “kinds” of magnetization in models that have more than one relevant quantum number per site.
 """
 function magnetization_state end
 
@@ -77,22 +83,25 @@ In models where additional degrees of freedom exist, this function maps sse site
 """
 magnetization_lattice_site_idx(::AbstractModel, sse_site_idx::Integer) = sse_site_idx
 
-function staggered_sign(
+@inline staggered_sign(model::AbstractModel, q, stagger_uc, site_idx) =
+    staggered_sign(model.lattice, q, stagger_uc, site_idx)
+
+@inline function staggered_sign(
     est::MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix},
     site_idx::Integer,
 )::Int where {OrderingVector,StaggerUC,Model,Prefix}
-    return staggered_sign(est.model.lattice, OrderingVector, StaggerUC, site_idx)
+    return staggered_sign(est.model, OrderingVector, StaggerUC, site_idx)
 end
 
 function init(
-    ::Type{MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix}},
+    ::Type{MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Tag}},
     model::AbstractModel,
     state::AbstractVector{StateIndex},
-) where {OrderingVector,StaggerUC,Model,Prefix}
+) where {OrderingVector,StaggerUC,Model,Prefix,Tag}
     tmpmag = @inline @fastmath sum(
         site ->
-            staggered_sign(model.lattice, OrderingVector, StaggerUC, site) *
-            magnetization_state(model, site, state[site]),
+            staggered_sign(model, OrderingVector, StaggerUC, site) *
+            magnetization_state(model, Val(Tag), site, state[site]),
         eachindex(state),
     )
 
@@ -102,7 +111,7 @@ function init(
     mag4 = tmpmag^4
 
     # use typeof(model) here because Model may be an abstract type
-    return MagnetizationEstimator{OrderingVector,StaggerUC,typeof(model),Prefix}(;
+    return MagnetizationEstimator{OrderingVector,StaggerUC,typeof(model),Prefix,Tag}(;
         model,
         n = 1,
         tmpmag,
@@ -114,36 +123,43 @@ function init(
 end
 
 @inline function measure(
-    est::MagnetizationEstimator,
+    est::MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Tag},
     op::OperCode,
     ::AbstractVector{StateIndex},
     sse_data::SSEData,
-)
-    @inbounds if !isdiagonal(op)
-        bond = sse_data.bonds[get_bond(op)]
-        vd = get_vertex_data(sse_data, get_bond(op))
-        leg_state = get_leg_state(vd, get_vertex(op))
+) where {OrderingVector,StaggerUC,Model,Prefix,Tag}
+    @fastmath begin
+        @inbounds if !isdiagonal(op)
+            bond = sse_data.bonds[get_bond(op)]
+            vd = get_vertex_data(sse_data, get_bond(op))
+            leg_state = get_leg_state(vd, get_vertex(op))
 
-        nsites = length(vd.dims)
-        for l = 1:nsites
-            site = magnetization_lattice_site_idx(est.model, bond.sites[l])
-            if site !== nothing
-                est.tmpmag +=
-                    staggered_sign(est, site) * (
-                        magnetization_state(est.model, site, leg_state[nsites+l]) -
-                        magnetization_state(est.model, site, leg_state[l])
-                    )
+            nsites = length(vd.dims)
+            for l = 1:nsites
+                site = magnetization_lattice_site_idx(est.model, bond.sites[l])
+                if site !== nothing
+                    est.tmpmag +=
+                        staggered_sign(est, site) * (
+                            magnetization_state(
+                                est.model,
+                                Val(Tag),
+                                site,
+                                leg_state[nsites+l],
+                            ) -
+                            magnetization_state(est.model, Val(Tag), site, leg_state[l])
+                        )
+                end
             end
         end
+
+        est.mag += est.tmpmag
+        est.absmag += abs(est.tmpmag)
+        tmpmag2 = est.tmpmag * est.tmpmag
+        est.mag2 += tmpmag2
+        est.mag4 += tmpmag2 * tmpmag2
+
+        est.n += 1
     end
-
-    est.mag += est.tmpmag
-    est.absmag += abs(est.tmpmag)
-    tmpmag2 = est.tmpmag * est.tmpmag
-    est.mag2 += tmpmag2
-    est.mag4 += tmpmag2 * tmpmag2
-
-    est.n += 1
 
     return nothing
 end

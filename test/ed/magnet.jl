@@ -26,38 +26,47 @@ end
 
 function calc_magnetization!(
     obs::AbstractDict{Symbol,<:Any},
-    magnet::S.MagnetModel,
+    model::S.AbstractModel,
     ens::Ensemble,
-    ::Type{S.MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix}},
-) where {OrderingVector,StaggerUC,Model,Prefix}
+    ::Type{S.MagnetizationEstimator{OrderingVector,StaggerUC,Model,Prefix,Tag}},
+) where {OrderingVector,StaggerUC,Model,Prefix,Tag}
     calc_magnetization!(
         obs,
-        magnet,
+        model,
         ens;
         ordering_vector = OrderingVector,
         stagger_uc = StaggerUC,
         prefix = Prefix,
+        tag = Tag,
     )
 end
 
 function calc_magnetization!(
     obs::AbstractDict{Symbol,<:Any},
-    magnet::S.MagnetModel,
+    model::S.AbstractModel,
     ens::Ensemble;
     ordering_vector::Tuple,
     stagger_uc::Bool,
     prefix::Symbol,
+    tag,
 )
 
     M =
-        make_operator(magnet) do M, lifter
-            for i in eachindex(magnet.site_params)
+        make_operator(model) do M, lifter
+            for i in eachindex(model.site_params)
                 M +=
-                    S.staggered_sign(magnet.lattice, ordering_vector, stagger_uc, i) *
-                    spin(lifter, i, 3)
+                    S.staggered_sign(model.lattice, ordering_vector, stagger_uc, i) *
+                    lift(
+                        lifter,
+                        i,
+                        Diagonal([
+                            S.magnetization_state(model, Val(tag), i, s) for
+                            s = 1:lifter.site_dims[i]
+                        ]),
+                    )
             end
             return M
-        end ./ S.normalization_site_count(magnet)
+        end ./ S.normalization_site_count(model)
 
     symbols, _ = S.magnetization_estimator_obs_symbols(prefix)
 
@@ -70,18 +79,18 @@ function calc_magnetization!(
 
     obs[symbols.binderratio] = m2 .^ 2 ./ m4
     obs[symbols.magchi] =
-        integrated_correlator(ens, M, M) * S.normalization_site_count(magnet)
+        integrated_correlator(ens, M, M) * S.normalization_site_count(model)
 
     return nothing
 end
 
 function calc_observables!(
     obs::AbstractDict{Symbol,<:Any},
-    magnet::S.MagnetModel,
+    model::S.AbstractModel,
     ens::Ensemble,
 )
-    for est in S.get_opstring_estimators(magnet)
-        calc_magnetization!(obs, magnet, ens, est)
+    for est in S.get_opstring_estimators(model)
+        calc_magnetization!(obs, model, ens, est)
     end
 
     return nothing
