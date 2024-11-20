@@ -136,6 +136,36 @@ function testjob_magnet_bench(sweeps::Integer, thermalization::Integer)
     return make_tasks(tm)
 end
 
+function testjob_cluster_bench(sweeps::Integer, thermalization::Integer)
+    tm = TaskMaker()
+    tm.sweeps = sweeps
+    tm.thermalization = thermalization
+    tm.binsize = 100
+
+    tm.seed = 124535
+
+    tm.T = 0.1
+
+    tm.model = S.ClusterModel
+    tm.inner_model = S.MagnetModel
+    tm.cluster_bases = (S.ClusterBases.dimer,)
+    tm.lattice = (unitcell = S.UnitCells.fully_frust_square_bilayer, size = (30, 30))
+
+    tm.measure_quantum_numbers = [(name = Symbol(), quantum_number = 2)]
+
+    tm.parameter_map = (S = [:Sa, :Sb], J = vcat([:JD], repeat([:JP], 8)))
+
+    tm.JD = 0.5
+    tm.JP = 1
+
+    tm.Sa = 1 // 2
+    tm.Sb = 1 // 2
+
+    task(tm)
+
+    return make_tasks(tm)
+end
+
 function generate_test_jobs(
     jobdir::AbstractString,
     sweeps::Integer,

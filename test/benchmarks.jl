@@ -1,4 +1,5 @@
 import StochasticSeriesExpansion as S
+using Carlo.ResultTools
 
 include("test_jobs.jl")
 
@@ -16,20 +17,21 @@ function bench_vertex_list()
     return () -> S.make_vertex_list!(vl, operators, sse_data.bonds)
 end
 
-function bench_total()
+function bench_total(jobfunc = testjob_magnet_bench)
     function bench()
         mktempdir() do dir
-            tasks = testjob_magnet_bench(10000, 1000)
+            tasks = jobfunc(5000, 2000)
             job = JobInfo(
                 "$dir/bench",
                 S.MC,
-                rng = Random.MersenneTwister,
                 tasks = tasks,
                 checkpoint_time = "15:00",
                 run_time = "15:00",
             )
 
             Carlo.start(Carlo.SingleScheduler, job)
+            data = ResultTools.dataframe("$dir/bench.results.json")
+            @show data[1]["_ll_measure_time"]
         end
         return nothing
     end
