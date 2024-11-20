@@ -1,12 +1,34 @@
+"""
+    ClusterBasis(quantum_numbers::Vector{NTuple{N,T}}, transformation::AbstractMatrix{T})
+
+Sets up a cluster basis with a set of `quantum_numbers` and a unitary `transformation` that contains the basis states expressed in the original basis as columns. Each state can be associated with a tuple of quantum numbers (e.g. magnetization or total spin). The length of `quantum_numbers` has to equal the number of columns in `transformation`.
+
+For examples, see the [`ClusterBases`](@ref) submodule.
+"""
 struct ClusterBasis{N,T}
     quantum_numbers::Vector{NTuple{N,T}}
     transformation::Matrix{T}
 end
 
-struct ClusterModel{InnerModel,N,T} <: AbstractModel
+"""
+    ClusterModel <: AbstractModel
+
+This model wraps another model, allowing to simulate that model in a cluster basis. For example, given a `MagnetModel`, `ClusterModel` can be used to reformulate it in the eigenbasis of local dimers, which allows performing SSE simulations for some frustrated models without a sign problem.
+
+For now, the interface for this is experimental and makes some assumptions on the underlying model, such as having a `lattice` field. By default, the cluster basis contains all the spins in that lattices unitcell.
+
+## Task parameters
+
+- `inner_model`: The underlying `AbstractModel` that should be simulated
+- `cluster_bases`: *Tuple* of [`ClusterBasis`](@ref) to use for the different clusters
+- `measure_quantum_numbers`: Vector of named tuples `(;name::Symbol, quantum_number::Int)` that allows measuring the quantum numbers defined in the `ClusterBasis`.
+"""
+struct ClusterModel{InnerModel,N,T,NQuant} <: AbstractModel
     inner_model::InnerModel
-    basis::NTuple{N,ClusterBasis}
-    cluster_ids::Vector{T}
+    basis::NTuple{N,ClusterBasis{NQuant,T}}
+    cluster_ids::Vector{Int}
+
+    opstring_estimators::Vector{DataType}
 end
 
 function ClusterModel(params::AbstractDict{Symbol,<:Any})
@@ -26,10 +48,31 @@ function ClusterModel(params::AbstractDict{Symbol,<:Any})
         )
     end
 
-    return ClusterModel(inner_model, bases, cluster_ids)
+    opstring_estimators = generate_cluster_opstring_estimators(
+        inner_model.lattice,
+        params[:measure_quantum_numbers],
+    )
+
+    return ClusterModel(
+        inner_model,
+        bases,
+        repeat(cluster_ids, prod(inner_model.lattice.Ls)),
+        opstring_estimators,
+    )
 end
 
 leg_count(::Type{<:ClusterModel{InnerModel}}) where {InnerModel} = leg_count(InnerModel)
+
+@inline function magnetization_state(
+    model::ClusterModel,
+    ::Val{QuantumNumberIdx},
+    site_idx::Integer,
+    state_idx::Integer,
+) where {QuantumNumberIdx}
+    return @inbounds model.basis[model.cluster_ids[site_idx]].quantum_numbers[state_idx][QuantumNumberIdx]
+end
+
+@inline staggered_sign(model::ClusterModel, ::Any, ::Any, ::Any) = 1
 
 normalization_site_count(model::ClusterModel) = normalization_site_count(model.inner_model)
 
@@ -176,8 +219,24 @@ function absorb_intracluster_hamiltonians(
     )
 end
 
+function generate_cluster_opstring_estimators(lattice, measure_params::AbstractVector)
+    return convert.(
+        DataType,
+        map(measure_params) do measure
+            q = ntuple(i -> false, dimension(lattice))
+            return MagnetizationEstimator{
+                q,
+                false,
+                ClusterModel,
+                measure[:name],
+                measure[:quantum_number],
+            }
+        end,
+    )
+end
+
 function get_opstring_estimators(model::ClusterModel)
-    return []
+    return model.opstring_estimators
 end
 
 generate_sse_data(cluster::ClusterModel) =
@@ -185,7 +244,7 @@ generate_sse_data(cluster::ClusterModel) =
 
 function generate_cluster_sse_data(cluster::ClusterModel, mag::MagnetModel)
     intracluster_hamiltonians, intercluster_hamiltonians = build_cluster_hamiltonians(
-        cluster.cluster_ids,
+        cluster.cluster_ids[eachindex(mag.lattice.uc.sites)],
         mag.lattice.uc.bonds,
         mag.bond_params,
         mag.site_params,

@@ -81,6 +81,8 @@ function testjob_fully_frustrated_bilayer(sweeps::Integer, thermalization::Integ
     tm.cluster_bases = (S.ClusterBases.dimer,)
     tm.lattice = (unitcell = S.UnitCells.fully_frust_square_bilayer, size = (2, 2))
 
+    tm.measure_quantum_numbers = [(name = Symbol(), quantum_number = 2)]
+
     tm.parameter_map =
         (S = [:Sa, :Sb], J = [:JD, :JxP, :JxP, :JyP, :JyP, :JxX, :JxX, :JyX, :JyX])
 

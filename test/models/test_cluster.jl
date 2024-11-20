@@ -24,6 +24,7 @@
                 Dz = [:Dz1, :Dz2],
             ),
             :cluster_bases => (S.ClusterBases.dimer,),
+            :measure_quantum_numbers => [],
             :J1 => 1,
             :J2 => 1.1,
             :J3 => 1.2,
@@ -38,7 +39,7 @@
         model = S.ClusterModel(params)
 
         intracluster_hamiltonians, intercluster_hamiltonians = S.build_cluster_hamiltonians(
-            model.cluster_ids,
+            model.cluster_ids[eachindex(model.inner_model.lattice.uc.sites)],
             model.inner_model.lattice.uc.bonds,
             model.inner_model.bond_params,
             model.inner_model.site_params,
