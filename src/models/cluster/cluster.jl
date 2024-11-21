@@ -305,6 +305,9 @@ function generate_cluster_sse_data(cluster::ClusterModel, mag::MagnetModel)
     return SSEData(vertex_data, bonds)
 end
 
+"""
+This submodule contains some useful predefined cluster bases.
+"""
 module ClusterBases
 import ..ClusterBasis
 

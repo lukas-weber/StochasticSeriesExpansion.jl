@@ -10,6 +10,17 @@ The `MagnetModel` implementation allows the simulation of Heisenberg-type magnet
 StochasticSeriesExpansion.MagnetModel
 ```
 
+## ClusterModel
+
+!!! warning
+    This feature is experimental. It is tested and should work, but its API and parameters may change significantly in a future release.
+
+```@docs
+StochasticSeriesExpansion.ClusterModel
+StochasticSeriesExpansion.ClusterBasis
+StochasticSeriesExpansion.ClusterBases
+```
+
 ## Common ingredients
 ### Lattice
 This is a simple lattice structure that may be shared across different models. Practitioners only need to know how to create lattices from the task parameters.
