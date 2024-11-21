@@ -1,7 +1,7 @@
 name = "StochasticSeriesExpansion"
 uuid = "1c8cc5bc-bd94-4f4b-9471-62b736d0cc39"
 authors = ["Lukas Weber <49278367+lukas-weber@users.noreply.github.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Carlo = "780c37f4-4e5a-43de-9e79-65c261e525a4"

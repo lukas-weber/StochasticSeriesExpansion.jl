@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1
 
 ### Added
 - `ClusterModel` for simulating other models in clustered bases (e.g. fully-frustrated bilayer)
