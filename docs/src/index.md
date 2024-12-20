@@ -10,7 +10,7 @@ An implementation of the stochastic series expansion (SSE) quantum Monte Carlo a
 
 ## Getting started
 
-Jump right into the Tutorial (TODO).
+Jump right into the [Tutorial](@ref tutorial).
 
 ## Can I simulate my own model?
 

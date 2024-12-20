@@ -28,7 +28,7 @@ end
 
 Describes an arbitrary-spin quantum magnet with the Hamiltonian
 ```math
-H = \sum_{⟨i,j⟩} J_{ij} (S_i \cdot S_j + d_{ij} S_i^z S_j^z) + \sum_i h_i S^z_i + D^z_i (S^z_i)^2 + D^x_i (S^x_i)^2
+H = \sum_{⟨i,j⟩} J_{ij} (S_i \cdot S_j + (1+d_{ij}) S_i^z S_j^z) + \sum_i h_i S^z_i + D^z_i (S^z_i)^2 + D^x_i (S^x_i)^2
 ```
 
 ## Task parameters

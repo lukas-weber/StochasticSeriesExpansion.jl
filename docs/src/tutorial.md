@@ -1,4 +1,4 @@
-# Tutorial
+# [Tutorial](@id tutorial)
 
 In this tutorial, we will calculate the magnetic susceptibility of the spin-1 honeycomb antiferromagnet BaNi₂V₂O₈, reproducing a calculation in [PRB **104**, 065502 (2021)](https://doi.org/10.1103/physrevb.104.064402), where an anisotropic Heisenberg model,
 
