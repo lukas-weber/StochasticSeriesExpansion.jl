@@ -12,10 +12,14 @@ tm.binsize = 100
 temperatures = range(0.05, 4, 20)
 system_sizes = [10, 20]
 
+# from PRB 104, 064402
+J_n = 8.07 # meV
+D_EP = 0.04556 # meV
+
 tm.model = MagnetModel
 tm.S = 1
 tm.J = 1
-tm.Dz = 0.005645 # D^{QMC}_{EP(XY)}/J^{QMC}_n from PRB 104, 065502 
+tm.Dz = D_EP / J_n
 
 tm.measure = [:magnetization]
 for L in system_sizes
