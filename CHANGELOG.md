@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.1.1
+## 0.1.2 - 2025-12-04
+
+### Changed
+
+- update Carlo compat 
+
+## 0.1.1 - 2024-11-21
 
 ### Added
 - `ClusterModel` for simulating other models in clustered bases (e.g. fully-frustrated bilayer)
