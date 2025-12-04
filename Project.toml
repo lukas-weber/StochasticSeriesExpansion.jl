@@ -16,7 +16,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-Carlo = "0.2.2"
+Carlo = "0.2.2 - 0.3"
 DataFrames = "1.7"
 HDF5 = "0.17"
 HiGHS = "1.5.2"
