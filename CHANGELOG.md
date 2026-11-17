@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3 - 2026-11-17
+
+### Fixed
+
+- sse: fix opstring estimators failing on Julia nightly, which passes `Core.TypeEgal` instead of `Type` to generated functions.
+- make the deterministic S=1/2 case actually trigger (thanks @SufficientlySmooth!)
+
 ## 0.1.2 - 2025-12-04
 
 ### Changed
