@@ -157,7 +157,7 @@ function generate_bond_hamiltonian(
 
     energy_offset_factor = 0.25
     # use the deterministic solution for S == 1//2
-    if dimi == dimj == 2 && bond.hz == 0 && bond.Dz == 0 && bond.Dx == 0
+    if dimi == dimj == 2 && all(iszero, bond.hz) && all(iszero, bond.Dz) && all(iszero, bond.Dx)
         energy_offset_factor = 0.0
     end
 
