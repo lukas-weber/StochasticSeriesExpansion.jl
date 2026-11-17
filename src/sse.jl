@@ -324,7 +324,11 @@ This generated function fuses multiple SSE estimators that have to loop over the
     sign::AbstractFloat,
     estimator_types::Type{<:AbstractOpstringEstimator}...,
 ) where {Model,NSites}
-    get_type(::Type{Type{T}}) where {T} = T
+    if isdefined(Core, :TypeEgal)
+        get_type(T::Union{Core.TypeEq, Core.TypeEgal}) = Base.type_parameter(T)
+    else
+        get_type(::Type{Type{T}}) where {T} = T
+    end
     inits = Expr(
         :tuple,
         (:(init($(get_type(type)), mc.model, mc.state)) for type in estimator_types)...,
